@@ -1,16 +1,17 @@
-### Hi there 👋
+<div align="center">
+    <h2>Emanuel 👨‍💻| @emalro</h2>
+    <p>Information Systems Engineering Student and Python Beginner Programmer from Argentina 🇦🇷</p>
+</div>
 
-<!--
-**emalro/emalro** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+---
 
-Here are some ideas to get you started:
+### Technologies and Tools
+- HTML
+- CSS
+- Basic Python knowledge
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+### I'm currently:
+- Learning Git
+- Learning more about Python Core
+- Introducing myself to Flask
+- Getting deep into Linux
