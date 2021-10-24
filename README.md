@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="/resources/img/firewatch-background.jpg" width="800" height="300">
+    <img src="/resources/img/firewatch-backgroung.jpg">
     <h2>Emanuel R. ~ @emalro</h2>
     <p>Information Systems Engineering Student. Python Beginner from 🇦🇷</p>
 </div>
