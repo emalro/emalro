@@ -19,7 +19,7 @@
 
 ### Operative Systems
 ![Windows10](https://img.shields.io/badge/Windows%2010-0078D6?style=for-the-badge&logo=windows&logoColor=white)
-![ArchLinux](https://img.shields.io/badge/ArchLinux-1793D1?style=for-the-badge&logo=archlinux&logoColor=white)
+![LinuxLite](https://img.shields.io/badge/Linux%20Lite-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
 
 ### I'm currently
 - Getting deep into Linux
