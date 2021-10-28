@@ -25,3 +25,6 @@
 - Getting deep into Linux
 - Learning more about Python Core, Design Patterns and Git.
 - Introducing myself to Flask
+
+### Contact me
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/emanuel-a-romero)
