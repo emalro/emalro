@@ -46,21 +46,5 @@
     "technologies": ["SQL", "Power BI", "DAX"],
     "tags": ["reporting", "finance"],
     "created_at": "2024-06-18"
-  },
-  {
-    "id": "proj-4",
-    "title": {
-      "es": "[PLACEHOLDER] Web scraping de precios",
-      "en": "[PLACEHOLDER] Price scraping pipeline"
-    },
-    "description": {
-      "es": "[PLACEHOLDER] Pipeline de scraping programado y comparador de precios para ecommerce.",
-      "en": "[PLACEHOLDER] Scheduled scraping pipeline and price comparison for ecommerce."
-    },
-    "image_url": "/img/projects/sample-4.svg",
-    "technologies": ["Python", "BeautifulSoup", "PostgreSQL"],
-    "tags": ["etl", "automation"],
-    "github_url": "https://github.com/emalro/[PLACEHOLDER]-prices",
-    "created_at": "2023-09-04"
   }
 ]
