@@ -1,16 +1,48 @@
 ---
-// Minimal Footer for PR #1. The full Footer with SocialIcon.astro
-// renders in PR #3 (see sdd/static-portfolio-mvp/tasks PR #3).
+/**
+ * Footer per spec portfolio-footer.
+ *
+ * Two-region layout: copyright on the left, social icons on the right.
+ * The year is computed at runtime (PR #1 already did this) so the
+ * copyright stays current without a rebuild. Social URLs come from
+ * src/data/social.json via the Social type — the four required
+ * networks are rendered in the locked order (LinkedIn, GitHub,
+ * Kaggle, Tableau Public) and any empty URL is hidden.
+ *
+ * Platform names are not localized (they are proper nouns in both
+ * ES and EN), so this component does not consume the i18n contract
+ * for the labels — the aria-label and visible label are stable.
+ */
+import social from "../../data/social.json";
+import SocialIcon from "../ui/SocialIcon.astro";
+
 const year = new Date().getFullYear();
+
+const networks = [
+  { platform: "linkedin" as const, key: "linkedin", label: "LinkedIn" },
+  { platform: "github" as const, key: "github", label: "GitHub" },
+  { platform: "kaggle" as const, key: "kaggle", label: "Kaggle" },
+  { platform: "tableau" as const, key: "tableau_public", label: "Tableau Public" },
+];
 ---
 
 <footer class="border-t border-border">
   <div
-    class="mx-auto flex max-w-6xl flex-col items-start gap-2 px-6 py-6 text-xs text-ink-tertiary md:flex-row md:items-center md:justify-between md:px-8"
+    class="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-6 text-xs text-ink-tertiary md:flex-row md:items-center md:justify-between md:px-8"
   >
-    <p>© {year} Emanuel Romero</p>
-    <p class="font-mono text-[10px] uppercase tracking-widest text-ink-tertiary">
-      Built with Astro · MVP
+    <p class="font-mono">
+      © {year} <span class="text-ink-secondary">Emanuel Romero</span>
     </p>
+    <div class="flex flex-wrap items-center gap-1" role="list" aria-label="Social links">
+      {networks.map((n) => {
+        const url = social[n.key as keyof typeof social];
+        if (!url) return null;
+        return (
+          <div role="listitem">
+            <SocialIcon platform={n.platform} url={url} label={n.label} />
+          </div>
+        );
+      })}
+    </div>
   </div>
 </footer>
