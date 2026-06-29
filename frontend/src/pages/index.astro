@@ -1,23 +1,12 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Hero from "../components/sections/Hero.astro";
+import Experience from "../components/sections/Experience.astro";
+import Education from "../components/sections/Education.astro";
 ---
 
 <Layout>
-  <section id="hero" class="grid gap-6 py-16 md:py-24">
-    <p class="font-mono text-xs uppercase tracking-widest text-accent">
-      [MVP en construcción]
-    </p>
-    <h1 class="font-mono text-3xl font-bold md:text-4xl">
-      Emanuel Romero
-    </h1>
-    <p class="max-w-2xl text-ink-secondary md:text-lg">
-      Esta página se está construyendo con la metodología SDD en PRs encadenadas.
-      El navbar arriba (cambio de tema, selector de idioma) ya funciona; las
-      secciones se renderizan en PR #2 y PR #3.
-    </p>
-    <p class="text-sm text-ink-tertiary">
-      Build pipeline: <code class="font-mono">npm run build</code> →
-      <code class="font-mono">prebuild</code> corre el validador JSONB.
-    </p>
-  </section>
+  <Hero />
+  <Experience />
+  <Education />
 </Layout>

@@ -3,11 +3,11 @@ import ThemeToggle from "./ThemeToggle.astro";
 import LanguageSelector from "./LanguageSelector.astro";
 
 const links = [
-  { id: "hero", label: { es: "Inicio", en: "Home" }, placeholder: true },
-  { id: "experiencia", label: { es: "Experiencia", en: "Experience" }, placeholder: true },
-  { id: "educacion", label: { es: "Educación", en: "Education" }, placeholder: true },
-  { id: "proyectos", label: { es: "Proyectos", en: "Projects" }, placeholder: true },
-  { id: "cursos", label: { es: "Cursos", en: "Courses" }, placeholder: true },
+  { id: "hero", label: { es: "Inicio", en: "Home" } },
+  { id: "experiencia", label: { es: "Experiencia", en: "Experience" } },
+  { id: "educacion", label: { es: "Educación", en: "Education" } },
+  { id: "proyectos", label: { es: "Proyectos", en: "Projects" } },
+  { id: "cursos", label: { es: "Cursos", en: "Courses" } },
 ] as const;
 ---
 
@@ -20,17 +20,16 @@ const links = [
       class="font-mono text-sm font-bold tracking-tight text-accent"
       aria-label="Emanuel Romero"
     >
-      er<span class="text-ink-primary">/</span>portfolio
+      emalro
     </a>
     <nav class="ml-4 hidden flex-1 items-center gap-1 md:flex">
       {
         links.map((link) => (
           <a
-            href={link.placeholder ? "#" : `#${link.id}`}
+            href={`#${link.id}`}
             class="rounded-md px-3 py-2 text-sm text-ink-secondary hover:bg-bg-surface hover:text-ink-primary"
             data-i18n={JSON.stringify(link.label)}
             data-anchor-id={link.id}
-            data-anchor-placeholder={link.placeholder}
           >
             {link.label.es}
           </a>
