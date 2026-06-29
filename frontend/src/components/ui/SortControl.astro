@@ -1,0 +1,28 @@
+---
+// Segmented sort control: Reciente | Antiguo.
+// Click handler lives in src/scripts/sort.ts; reads
+// data-sort-dir + data-sort-control to find the target list root.
+interface Props {
+  target: string;
+  defaultDir?: "desc" | "asc";
+}
+const { target, defaultDir = "desc" } = Astro.props;
+const options = [
+  { dir: "desc", label: "Reciente" },
+  { dir: "asc", label: "Antiguo" },
+] as const;
+---
+<div data-sort-group class="inline-flex items-center overflow-hidden rounded-md border border-border bg-bg-surface font-mono text-xs" role="group" aria-label="Sort order">
+  {options.map((o) => (
+    <button
+      type="button"
+      class="px-2.5 py-1.5 text-ink-secondary data-[active=true]:bg-accent-muted data-[active=true]:text-accent"
+      data-sort-control={target}
+      data-sort-dir={o.dir}
+      data-active={(o.dir === defaultDir).toString()}
+      aria-pressed={(o.dir === defaultDir).toString()}
+    >
+      {o.label}
+    </button>
+  ))}
+</div>

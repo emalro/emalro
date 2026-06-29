@@ -1,0 +1,16 @@
+---
+// Skill chip used by Hero.astro for hard and soft skills.
+import type { LocalizedStr } from "../../types/content";
+
+interface Props {
+  skill: LocalizedStr;
+}
+const { skill } = Astro.props;
+---
+
+<span
+  class="chip font-mono"
+  data-i18n={JSON.stringify(skill)}
+>
+  {skill.es}
+</span>
