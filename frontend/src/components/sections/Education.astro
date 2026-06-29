@@ -1,0 +1,37 @@
+---
+import education from "../../data/education.json";
+import SortControl from "../ui/SortControl.astro";
+
+const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const fmt = (ym: string): string => {
+  const [y, m] = ym.split("-");
+  return `${months[Number(m) - 1]} ${y}`;
+};
+---
+
+<section id="educacion" class="grid gap-8 py-16 md:py-24">
+  <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div>
+      <p class="font-mono text-xs uppercase tracking-widest text-accent">// 02</p>
+      <h2 class="mt-2 font-mono text-2xl font-bold md:text-3xl" data-i18n={JSON.stringify({ es: "Educación", en: "Education" })}>Educación</h2>
+    </div>
+    <SortControl target="educacion-list" defaultDir="desc" />
+  </div>
+  <ol id="educacion-list" data-sort-root data-sort-dir="desc" class="grid gap-4">
+    {education.map((entry) => (
+      <li class="grid gap-4 rounded-lg border border-border bg-bg-surface p-5 md:grid-cols-[auto_1fr_auto] md:items-center" data-sort-value={entry.start_date}>
+        <img src={entry.logo_url} alt={entry.institution} width="48" height="48" loading="lazy" class="h-12 w-12 rounded-md border border-border bg-bg-elevated object-contain p-1" />
+        <div class="grid gap-1">
+          <h3 class="font-mono text-base font-semibold text-ink-primary md:text-lg" data-i18n={JSON.stringify(entry.degree)}>{entry.degree.es}</h3>
+          <p class="text-sm text-ink-secondary"><span class="font-mono">{entry.institution}</span></p>
+          {entry.description && <p class="text-sm text-ink-secondary" data-i18n={JSON.stringify(entry.description)}>{entry.description.es}</p>}
+        </div>
+        <div class="flex flex-col items-start gap-1 md:items-end">
+          <time class="font-mono text-xs text-ink-tertiary" datetime={entry.start_date}>{fmt(entry.start_date)}</time>
+          <span class="font-mono text-xs text-ink-tertiary">—</span>
+          <time class="font-mono text-xs text-ink-tertiary" datetime={entry.end_date}>{fmt(entry.end_date)}</time>
+        </div>
+      </li>
+    ))}
+  </ol>
+</section>
