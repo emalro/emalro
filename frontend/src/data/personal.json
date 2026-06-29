@@ -1,0 +1,19 @@
+{
+  "name": "Emanuel Romero",
+  "role": {
+    "es": "[PLACEHOLDER] Rol profesional",
+    "en": "[PLACEHOLDER] Professional role"
+  },
+  "summary": {
+    "es": "[PLACEHOLDER] Resumen profesional de dos o tres oraciones en español.",
+    "en": "[PLACEHOLDER] Professional summary in two or three sentences."
+  },
+  "avatar_url": "/img/avatar.svg",
+  "hardSkills": [
+    { "es": "SQL", "en": "SQL" },
+    { "es": "Python", "en": "Python" }
+  ],
+  "softSkills": [
+    { "es": "Comunicación", "en": "Communication" }
+  ]
+}

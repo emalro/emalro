@@ -1,0 +1,54 @@
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "title",
+      "description",
+      "image_url",
+      "technologies",
+      "tags",
+      "created_at"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "title": {
+        "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+      },
+      "description": {
+        "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+      },
+      "image_url": {
+        "type": "string",
+        "minLength": 1
+      },
+      "technologies": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "github_url": {
+        "type": "string"
+      },
+      "demo_url": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date"
+      }
+    },
+    "additionalProperties": false
+  }
+}

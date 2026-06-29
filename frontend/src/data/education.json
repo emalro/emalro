@@ -1,0 +1,17 @@
+[
+  {
+    "id": "edu-placeholder-1",
+    "institution": "[PLACEHOLDER] Institution",
+    "logo_url": "/img/institutions/placeholder.svg",
+    "degree": {
+      "es": "[PLACEHOLDER] Título académico",
+      "en": "[PLACEHOLDER] Academic degree"
+    },
+    "start_date": "2018-01",
+    "end_date": "2022-12",
+    "description": {
+      "es": "[PLACEHOLDER] Descripción breve.",
+      "en": "[PLACEHOLDER] Short description."
+    }
+  }
+]

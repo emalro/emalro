@@ -1,0 +1,22 @@
+{
+  "$id": "i18n-shape.schema.json",
+  "definitions": {
+    "LocalizedStr": {
+      "type": "object",
+      "properties": {
+        "es": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "es",
+        "en"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

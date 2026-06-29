@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "required": [
+    "linkedin",
+    "github",
+    "kaggle",
+    "tableau_public"
+  ],
+  "properties": {
+    "linkedin": {
+      "type": "string"
+    },
+    "github": {
+      "type": "string"
+    },
+    "kaggle": {
+      "type": "string"
+    },
+    "tableau_public": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

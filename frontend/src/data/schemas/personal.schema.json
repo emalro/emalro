@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "required": [
+    "name",
+    "role",
+    "summary",
+    "avatar_url",
+    "hardSkills",
+    "softSkills"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role": {
+      "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+    },
+    "summary": {
+      "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+    },
+    "avatar_url": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hardSkills": {
+      "type": "array",
+      "items": {
+        "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+      }
+    },
+    "softSkills": {
+      "type": "array",
+      "items": {
+        "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+      }
+    }
+  },
+  "additionalProperties": false
+}

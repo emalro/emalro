@@ -1,0 +1,38 @@
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "platform",
+      "platform_logo_url",
+      "name",
+      "created_at"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "platform": {
+        "type": "string",
+        "minLength": 1
+      },
+      "platform_logo_url": {
+        "type": "string",
+        "minLength": 1
+      },
+      "name": {
+        "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+      },
+      "verification_url": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date"
+      }
+    },
+    "additionalProperties": false
+  }
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "id": "course-placeholder-1",
+    "platform": "[PLACEHOLDER] Platform",
+    "platform_logo_url": "/img/platforms/placeholder.svg",
+    "name": {
+      "es": "[PLACEHOLDER] Nombre del curso",
+      "en": "[PLACEHOLDER] Course name"
+    },
+    "verification_url": "https://[PLACEHOLDER]/verify",
+    "created_at": "2024-03-15"
+  }
+]

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "proj-placeholder-1",
+    "title": {
+      "es": "[PLACEHOLDER] Título del proyecto",
+      "en": "[PLACEHOLDER] Project title"
+    },
+    "description": {
+      "es": "[PLACEHOLDER] Descripción del proyecto en español.",
+      "en": "[PLACEHOLDER] Project description in English."
+    },
+    "image_url": "/img/projects/placeholder.svg",
+    "technologies": ["Python", "SQL"],
+    "tags": ["data-analysis"],
+    "github_url": "https://[PLACEHOLDER]/repo",
+    "created_at": "2024-06-01"
+  }
+]

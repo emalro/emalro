@@ -1,0 +1,17 @@
+[
+  {
+    "id": "exp-placeholder-1",
+    "organization": "[PLACEHOLDER] Organization",
+    "logo_url": "/img/companies/placeholder.svg",
+    "role": {
+      "es": "[PLACEHOLDER] Puesto actual",
+      "en": "[PLACEHOLDER] Current role"
+    },
+    "start_date": "2024-01",
+    "end_date": null,
+    "description": {
+      "es": "[PLACEHOLDER] Descripción de logros clave en español.",
+      "en": "[PLACEHOLDER] Key achievements in English."
+    }
+  }
+]
