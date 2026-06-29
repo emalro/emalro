@@ -1,0 +1,16 @@
+---
+// Minimal Footer for PR #1. The full Footer with SocialIcon.astro
+// renders in PR #3 (see sdd/static-portfolio-mvp/tasks PR #3).
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-border">
+  <div
+    class="mx-auto flex max-w-6xl flex-col items-start gap-2 px-6 py-6 text-xs text-ink-tertiary md:flex-row md:items-center md:justify-between md:px-8"
+  >
+    <p>© {year} Emanuel Romero</p>
+    <p class="font-mono text-[10px] uppercase tracking-widest text-ink-tertiary">
+      Built with Astro · MVP
+    </p>
+  </div>
+</footer>
