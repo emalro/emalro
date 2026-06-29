@@ -9,15 +9,15 @@ const fmt = (ym: string): string => {
 };
 ---
 
-<section id="experiencia" class="grid gap-8 py-16 md:py-24">
+<section id="experience" class="grid gap-8 py-16 md:py-24">
   <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
     <div>
       <p class="font-mono text-xs uppercase tracking-widest text-accent">// 01</p>
       <h2 class="mt-2 font-mono text-2xl font-bold md:text-3xl" data-i18n={JSON.stringify({ es: "Experiencia", en: "Experience" })}>Experiencia</h2>
     </div>
-    <SortControl target="experiencia-list" defaultDir="desc" />
+    <SortControl target="experience-list" defaultDir="desc" />
   </div>
-  <ol id="experiencia-list" data-sort-root data-sort-dir="desc" class="grid gap-4">
+  <ol id="experience-list" data-sort-root data-sort-dir="desc" class="grid gap-4">
     {experience.map((entry) => (
       <li class="grid gap-4 rounded-lg border border-border bg-bg-surface p-5 md:grid-cols-[auto_1fr_auto] md:items-center" data-sort-value={entry.start_date}>
         <img src={entry.logo_url} alt={entry.organization} width="48" height="48" loading="lazy" class="h-12 w-12 rounded-md border border-border bg-bg-elevated object-contain p-1" />
