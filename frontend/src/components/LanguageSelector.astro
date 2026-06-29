@@ -1,0 +1,30 @@
+---
+// Segmented ES | EN button group. The active language is reflected via
+// aria-pressed and data-active, both updated by src/scripts/i18n.ts.
+---
+
+<div
+  class="inline-flex items-center overflow-hidden rounded-md border border-border bg-bg-surface font-mono text-xs"
+  role="group"
+  aria-label="Language selector"
+>
+  <button
+    type="button"
+    class="px-2.5 py-1.5 text-ink-primary data-[active=true]:bg-accent-muted data-[active=true]:text-accent"
+    data-lang-select="es"
+    data-active="true"
+    aria-pressed="true"
+  >
+    ES
+  </button>
+  <span class="h-4 w-px bg-border" aria-hidden="true"></span>
+  <button
+    type="button"
+    class="px-2.5 py-1.5 text-ink-secondary data-[active=true]:bg-accent-muted data-[active=true]:text-accent"
+    data-lang-select="en"
+    data-active="false"
+    aria-pressed="false"
+  >
+    EN
+  </button>
+</div>
