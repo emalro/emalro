@@ -1,0 +1,61 @@
+---
+import "../styles/global.css";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/sections/Footer.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Emanuel Romero — Portfolio",
+  description = "Data Analyst portfolio. Experience, education, projects, and courses.",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="es" data-theme="dark" data-lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    />
+    <title>{title}</title>
+    <script is:inline>
+      // Pre-paint theme + language resolution. Inlined for FOUC mitigation.
+      // Mirrors src/scripts/head-bootstrap.ts; kept in sync intentionally.
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          var l = localStorage.getItem("lang");
+          var theme = t === "light" || t === "dark" ? t : "dark";
+          var lang = l === "en" || l === "es" ? l : "es";
+          document.documentElement.setAttribute("data-theme", theme);
+          document.documentElement.setAttribute("data-lang", lang);
+          document.documentElement.setAttribute("lang", lang);
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+          document.documentElement.setAttribute("data-lang", "es");
+        }
+      })();
+    </script>
+  </head>
+  <body class="min-h-dvh bg-bg-base text-ink-primary antialiased">
+    <Navbar />
+    <main class="mx-auto max-w-6xl px-6 pb-24 pt-12 md:px-8">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      import "../scripts/i18n.ts";
+      import "../scripts/theme.ts";
+    </script>
+  </body>
+</html>
