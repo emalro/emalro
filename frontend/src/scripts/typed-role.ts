@@ -6,14 +6,19 @@
  * page session. Anchored to the element with `data-typed-role` and
  * a child <span data-typed-cursor>.
  *
- * TODO(reduced-motion): PR #3 must check
- * `window.matchMedia('(prefers-reduced-motion: reduce)').matches`
- * and render the role as a static string with no cursor animation.
+ * When `prefers-reduced-motion: reduce` is set, the animation does
+ * not start: the role stays as the static ES text Astro rendered
+ * and the blinking cursor is removed from the DOM (the global CSS
+ * @media rule flattens any remaining CSS animation as a safety net).
  */
 
 const TYPING = 80;
 const BACKSPACE = 40;
 const PAUSE = 1500;
+
+function reducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 function setText(node: Text | null, value: string): void {
   if (node) node.data = value;
@@ -22,6 +27,14 @@ function setText(node: Text | null, value: string): void {
 function start(): void {
   const el = document.querySelector<HTMLElement>("[data-typed-role]");
   if (!el) return;
+
+  // No animation: leave the static ES text in place and drop the cursor.
+  if (reducedMotion()) {
+    const cursor = el.querySelector("[data-typed-cursor]");
+    cursor?.remove();
+    return;
+  }
+
   const es = el.dataset.typedRole ?? "";
   const en = el.dataset.typedRoleEn ?? "";
   const text = document.createTextNode(es);
