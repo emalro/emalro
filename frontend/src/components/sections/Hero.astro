@@ -1,0 +1,31 @@
+---
+import personal from "../../data/personal.json";
+import SkillChip from "../ui/SkillChip.astro";
+import Cursor from "../ui/Cursor.astro";
+---
+
+<section id="hero" class="grid gap-6 py-16 md:grid-cols-[1fr_auto] md:gap-12 md:py-24">
+  <div class="flex flex-col gap-5">
+    <p class="font-mono text-xs uppercase tracking-widest text-accent" data-i18n={JSON.stringify({ es: "// datos, decisiones, impacto", en: "// data, decisions, impact" })}>// datos, decisiones, impacto</p>
+    <h1 class="font-mono text-4xl font-bold leading-tight md:text-6xl" data-i18n={JSON.stringify(personal.name)}>{personal.name.es}</h1>
+    <h2 class="font-mono text-lg text-ink-secondary md:text-2xl" data-typed-role={personal.role.es} data-typed-role-en={personal.role.en}>
+      <span data-typed-role-text>{personal.role.es}</span><Cursor />
+    </h2>
+    <p class="max-w-2xl text-base text-ink-secondary md:text-lg" data-i18n={JSON.stringify(personal.summary)}>{personal.summary.es}</p>
+    <div class="flex flex-col gap-2">
+      <p class="font-mono text-xs uppercase tracking-widest text-ink-tertiary">Hard skills</p>
+      <ul class="flex flex-wrap gap-2">
+        {personal.hardSkills.map((s) => (<li><SkillChip skill={s} /></li>))}
+      </ul>
+    </div>
+    <div class="flex flex-col gap-2">
+      <p class="font-mono text-xs uppercase tracking-widest text-ink-tertiary">Soft skills</p>
+      <ul class="flex flex-wrap gap-2">
+        {personal.softSkills.map((s) => (<li><SkillChip skill={s} /></li>))}
+      </ul>
+    </div>
+  </div>
+  <div class="flex items-start justify-center md:items-center">
+    <img src={personal.avatar_url} alt={personal.name.es} width="160" height="160" loading="eager" class="h-32 w-32 rounded-2xl border border-border bg-bg-surface object-cover md:h-40 md:w-40" />
+  </div>
+</section>

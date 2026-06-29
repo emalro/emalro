@@ -1,0 +1,9 @@
+---
+// Blinking amber cursor for the Hero role line.
+// Animation is driven by src/scripts/typed-role.ts.
+---
+<span data-typed-cursor class="ml-0.5 inline-block h-[1em] w-[0.6ch] -translate-y-[0.1em] animate-pulse bg-accent" aria-hidden="true"></span>
+<style>
+  [data-typed-cursor] { animation: cursor-blink 1s steps(1) infinite; }
+  @keyframes cursor-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+</style>

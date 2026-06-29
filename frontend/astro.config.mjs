@@ -4,6 +4,6 @@ import tailwind from "@astrojs/tailwind";
 
 export default defineConfig({
   output: "static",
-  site: "https://emalro.dev",
+  site: "https://emalro.com.ar",
   integrations: [tailwind()],
 });

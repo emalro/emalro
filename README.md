@@ -1,5 +1,7 @@
 # emalro — Personal Portfolio
 
+Owner: Emanuel Romero · emalro.com.ar
+
 A static, dark-default, mobile-first personal portfolio/CV for a Data Analyst profile. Phase 1 (MVP) ships eight functional requirements with a self-hosted Astro static build; backend, auth, blog, and analytics are deferred to later phases.
 
 ## Stack

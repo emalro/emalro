@@ -1,17 +1,32 @@
 [
   {
-    "id": "exp-placeholder-1",
-    "organization": "[PLACEHOLDER] Organization",
-    "logo_url": "/img/companies/placeholder.svg",
+    "id": "exp-1",
+    "organization": "Acme Corp",
+    "logo_url": "/img/companies/acme.svg",
     "role": {
-      "es": "[PLACEHOLDER] Puesto actual",
-      "en": "[PLACEHOLDER] Current role"
+      "es": "[PLACEHOLDER] Analista de Datos Senior",
+      "en": "[PLACEHOLDER] Senior Data Analyst"
     },
-    "start_date": "2024-01",
+    "start_date": "2023-03",
     "end_date": null,
     "description": {
-      "es": "[PLACEHOLDER] Descripción de logros clave en español.",
-      "en": "[PLACEHOLDER] Key achievements in English."
+      "es": "[PLACEHOLDER] Liderazgo de proyectos de analítica, dashboards ejecutivos y modelos de reporting.",
+      "en": "[PLACEHOLDER] Led analytics projects, executive dashboards, and reporting models."
+    }
+  },
+  {
+    "id": "exp-2",
+    "organization": "Globex",
+    "logo_url": "/img/companies/globex.svg",
+    "role": {
+      "es": "[PLACEHOLDER] Analista de Datos",
+      "en": "[PLACEHOLDER] Data Analyst"
+    },
+    "start_date": "2021-01",
+    "end_date": "2023-02",
+    "description": {
+      "es": "[PLACEHOLDER] Construcción de pipelines ETL, análisis exploratorio y automatización de reportes.",
+      "en": "[PLACEHOLDER] Built ETL pipelines, exploratory analysis, and report automation."
     }
   }
 ]
