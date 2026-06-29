@@ -1,18 +1,66 @@
 [
   {
-    "id": "proj-placeholder-1",
+    "id": "proj-1",
     "title": {
-      "es": "[PLACEHOLDER] Título del proyecto",
-      "en": "[PLACEHOLDER] Project title"
+      "es": "[PLACEHOLDER] Análisis de ventas retail",
+      "en": "[PLACEHOLDER] Retail sales analysis"
     },
     "description": {
-      "es": "[PLACEHOLDER] Descripción del proyecto en español.",
-      "en": "[PLACEHOLDER] Project description in English."
+      "es": "[PLACEHOLDER] Pipeline ETL sobre datos de ventas, dashboard ejecutivo y segmentación de clientes.",
+      "en": "[PLACEHOLDER] ETL pipeline over sales data, exec dashboard, and customer segmentation."
     },
     "image_url": "/img/projects/placeholder.svg",
-    "technologies": ["Python", "SQL"],
-    "tags": ["data-analysis"],
-    "github_url": "https://[PLACEHOLDER]/repo",
-    "created_at": "2024-06-01"
+    "technologies": ["Python", "SQL", "Power BI"],
+    "tags": ["data-analysis", "etl"],
+    "github_url": "https://github.com/emalro/[PLACEHOLDER]-retail",
+    "created_at": "2025-03-10"
+  },
+  {
+    "id": "proj-2",
+    "title": {
+      "es": "[PLACEHOLDER] Predicción de churn",
+      "en": "[PLACEHOLDER] Churn prediction"
+    },
+    "description": {
+      "es": "[PLACEHOLDER] Modelo de clasificación para identificar clientes con riesgo de abandono y panel de seguimiento.",
+      "en": "[PLACEHOLDER] Classification model to flag at-risk customers with monitoring dashboard."
+    },
+    "image_url": "/img/projects/sample-2.svg",
+    "technologies": ["Python", "scikit-learn", "Streamlit"],
+    "tags": ["machine-learning", "classification"],
+    "github_url": "https://github.com/emalro/[PLACEHOLDER]-churn",
+    "demo_url": "https://[PLACEHOLDER].streamlit.app/",
+    "created_at": "2024-11-22"
+  },
+  {
+    "id": "proj-3",
+    "title": {
+      "es": "[PLACEHOLDER] Reportería financiera",
+      "en": "[PLACEHOLDER] Financial reporting"
+    },
+    "description": {
+      "es": "[PLACEHOLDER] Cubos OLAP y reportes automatizados en Power BI para el equipo de finanzas.",
+      "en": "[PLACEHOLDER] OLAP cubes and automated Power BI reports for the finance team."
+    },
+    "image_url": "/img/projects/sample-3.svg",
+    "technologies": ["SQL", "Power BI", "DAX"],
+    "tags": ["reporting", "finance"],
+    "created_at": "2024-06-18"
+  },
+  {
+    "id": "proj-4",
+    "title": {
+      "es": "[PLACEHOLDER] Web scraping de precios",
+      "en": "[PLACEHOLDER] Price scraping pipeline"
+    },
+    "description": {
+      "es": "[PLACEHOLDER] Pipeline de scraping programado y comparador de precios para ecommerce.",
+      "en": "[PLACEHOLDER] Scheduled scraping pipeline and price comparison for ecommerce."
+    },
+    "image_url": "/img/projects/sample-4.svg",
+    "technologies": ["Python", "BeautifulSoup", "PostgreSQL"],
+    "tags": ["etl", "automation"],
+    "github_url": "https://github.com/emalro/[PLACEHOLDER]-prices",
+    "created_at": "2023-09-04"
   }
 ]

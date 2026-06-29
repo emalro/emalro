@@ -1,0 +1,18 @@
+---
+// Static tag chip. Visible label only — NOT clickable in MVP per spec
+// REQ-proj-03. Tag clickability is deferred to Fase 3 (the /explore view
+// per RF-20/RF-21). A click handler is intentionally absent; future
+// implementation will replace the <span> with a <Link> or <a>.
+//
+// TODO(fase-3): wire tag click → filter grid by tag (or navigate to
+// /explore?tag=<slug>) when the explore view ships.
+interface Props {
+  label: string;
+}
+const { label } = Astro.props;
+---
+
+<span
+  class="inline-flex items-center rounded-md border border-border bg-bg-surface px-2 py-0.5 font-mono text-[11px] text-ink-secondary"
+  data-tag={label}
+>{label}</span>
