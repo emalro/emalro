@@ -13,7 +13,9 @@
 export type LocalizedStr = { es: string; en: string };
 
 export interface Personal {
-  name: string;
+  // Personal name is a proper noun; stored as LocalizedStr for i18n
+  // symmetry even though the value is the same in both languages.
+  name: LocalizedStr;
   role: LocalizedStr;
   summary: LocalizedStr;
   avatar_url: string;

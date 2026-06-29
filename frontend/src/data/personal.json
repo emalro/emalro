@@ -1,5 +1,8 @@
 {
-  "name": "Emanuel Romero",
+  "name": {
+    "es": "Emanuel Romero",
+    "en": "Emanuel Romero"
+  },
   "role": {
     "es": "[PLACEHOLDER] Rol profesional",
     "en": "[PLACEHOLDER] Professional role"
@@ -11,9 +14,14 @@
   "avatar_url": "/img/avatar.svg",
   "hardSkills": [
     { "es": "SQL", "en": "SQL" },
-    { "es": "Python", "en": "Python" }
+    { "es": "Python", "en": "Python" },
+    { "es": "Power BI", "en": "Power BI" },
+    { "es": "Pandas", "en": "Pandas" },
+    { "es": "ETL", "en": "ETL" }
   ],
   "softSkills": [
-    { "es": "Comunicación", "en": "Communication" }
+    { "es": "Comunicación", "en": "Communication" },
+    { "es": "Trabajo en equipo", "en": "Teamwork" },
+    { "es": "Resolución de problemas", "en": "Problem solving" }
   ]
 }
