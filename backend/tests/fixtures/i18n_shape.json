@@ -1,0 +1,19 @@
+{
+  "LocalizedStr": {
+    "es": "Hola mundo",
+    "en": "Hello world"
+  },
+  "InvalidExtra": {
+    "es": "X",
+    "en": "Y",
+    "pt": "Z"
+  },
+  "EmptyEs": {
+    "es": "",
+    "en": "X"
+  },
+  "EmptyEnFallback": {
+    "es": "Solo espanol",
+    "en": ""
+  }
+}
