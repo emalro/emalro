@@ -1,6 +1,7 @@
 ---
 import education from "../../data/education.json";
 import SortControl from "../ui/SortControl.astro";
+import { renderMarkdown } from "../../lib/markdown";
 
 const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const fmt = (ym: string): string => {
@@ -23,8 +24,33 @@ const fmt = (ym: string): string => {
         <img src={entry.logo_url} alt={entry.institution} width="48" height="48" loading="lazy" class="h-12 w-12 rounded-md border border-border bg-bg-elevated object-contain p-1" />
         <div class="grid gap-1">
           <h3 class="font-mono text-base font-semibold text-ink-primary md:text-lg" data-i18n={JSON.stringify(entry.degree)}>{entry.degree.es}</h3>
-          <p class="text-sm text-ink-secondary"><span class="font-mono">{entry.institution}</span></p>
-          {entry.description && <p class="text-sm text-ink-secondary" data-i18n={JSON.stringify(entry.description)}>{entry.description.es}</p>}
+          <p class="flex items-center gap-2 text-sm text-ink-secondary">
+            <span class="font-mono">{entry.institution}</span>
+            {entry.website && (
+              <a
+                href={entry.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex h-5 w-5 items-center justify-center text-ink-tertiary transition-colors hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-surface"
+                aria-label={`${entry.institution} website`}
+                title={`${entry.institution} website`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M15 3h6v6"/>
+                  <path d="M10 14 21 3"/>
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                </svg>
+              </a>
+            )}
+          </p>
+          {entry.description && (
+            <div
+              class="text-sm text-ink-secondary description-md"
+              data-i18n={JSON.stringify(entry.description)}
+              data-i18n-html="true"
+              set:html={renderMarkdown(entry.description.es)}
+            />
+          )}
         </div>
         <div class="flex flex-col items-start gap-1 md:items-end">
           <time class="font-mono text-xs text-ink-tertiary" datetime={entry.start_date}>{fmt(entry.start_date)}</time>
@@ -39,3 +65,23 @@ const fmt = (ym: string): string => {
     ))}
   </ol>
 </section>
+
+<style>
+  .description-md :global(p) {
+    margin-bottom: 0.5rem;
+  }
+  .description-md :global(ul) {
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+  .description-md :global(li) {
+    margin-bottom: 0.25rem;
+  }
+  .description-md :global(strong) {
+    color: var(--color-ink-primary, #fff);
+    font-weight: 600;
+  }
+  .description-md :global(em) {
+    font-style: italic;
+  }
+</style>

@@ -39,6 +39,7 @@ from app.schemas.envelope import Envelope, PageMeta, PaginatedEnvelope
 from app.schemas.explore import ExploreItem, ExploreItemType, ExploreMatch
 from app.schemas.i18n import LocalizedStr
 from app.schemas.project import ProjectResponse
+from app.services.sanitize import sanitize_localized, sanitize_markdown
 
 router = APIRouter()
 
@@ -77,14 +78,34 @@ async def get_cv(session: AsyncSession = Depends(get_session)) -> Envelope[CVRes
             except json.JSONDecodeError:
                 extra_raw = {}
             try:
-                personal = PersonalData.model_validate(extra_raw)
+                personal_obj = PersonalData.model_validate(extra_raw)
             except Exception:
                 # Defensive: if `extra` is malformed, return None
                 # for personal rather than 500ing the entire CV.
-                personal = None
+                personal_obj = None
+            # Sanitize the markdown `summary` field on the public
+            # read path so the response carries safe HTML. The admin
+            # endpoint (see `app/api/v1/admin.py`) returns the raw
+            # markdown so the operator can edit the source in the
+            # CodeMirror editor (PR #6).
+            if personal_obj is not None:
+                personal_obj.summary = LocalizedStr.model_validate(
+                    sanitize_localized(personal_obj.summary.model_dump())
+                )
+            personal = personal_obj
         elif section == "experience":
+            # Sanitize the markdown `description` field on the
+            # public read path. Admin endpoint keeps the raw source.
+            if entry.description is not None:
+                entry.description = LocalizedStr.model_validate(
+                    sanitize_localized(entry.description.model_dump())
+                )
             experience.append(entry)
         elif section == "education":
+            if entry.description is not None:
+                entry.description = LocalizedStr.model_validate(
+                    sanitize_localized(entry.description.model_dump())
+                )
             education.append(entry)
         elif section in ("course", "courses"):
             courses.append(entry)
@@ -133,6 +154,13 @@ async def list_projects(
     ).scalars().all()
 
     items = [ProjectResponse.from_row(r) for r in rows]
+    # Sanitize the markdown `description` on the public read path so
+    # the response carries safe HTML. Admin endpoint keeps the raw
+    # source so the operator can edit the source markdown.
+    for item in items:
+        item.description = LocalizedStr.model_validate(
+            sanitize_localized(item.description.model_dump())
+        )
     return PaginatedEnvelope[ProjectResponse](
         data=items,
         meta=PageMeta(
@@ -277,15 +305,20 @@ async def _projects_for_explore(
     for r in rows:
         try:
             title = LocalizedStr.model_validate(json.loads(r.title))
+            description = LocalizedStr.model_validate(json.loads(r.description))
         except Exception:
             continue
+        # Sanitize the description on the public read path.
+        sanitized_description = LocalizedStr.model_validate(
+            sanitize_localized(description.model_dump())
+        )
         out.append(
             {
                 "type": ExploreItemType.PROJECT.value,
                 "id": r.id,
                 "slug": r.slug,
                 "title": title,
-                "excerpt": None,
+                "excerpt": sanitized_description,
                 "tags": _parse_list(r.tags),
                 "date": r.created_at,
                 "cover_image_url": None,

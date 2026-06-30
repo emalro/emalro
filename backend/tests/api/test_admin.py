@@ -202,3 +202,80 @@ def test_admin_resume_returns_all_rows(client, admin_user, db_session):
     orgs = [r["subtitle"] for r in data if r["section"] == "experience"]
     assert "Hidden" in orgs
     assert "Arbusta" in orgs
+
+
+# ---------------------------------------------------------------------------
+# Admin returns RAW markdown (content polish).
+#
+# The admin read+list endpoints keep the source markdown unchanged so
+# the operator can edit it in the CodeMirror editor (PR #6). The
+# public read path (`test_public.py`) sanitizes the same fields. The
+# asymmetry is intentional: admin = source of truth, public = safe
+# HTML for visitors.
+# ---------------------------------------------------------------------------
+
+
+def test_admin_projects_returns_raw_markdown_description(
+    client, admin_user, db_session
+):
+    """`/api/v1/admin/projects` returns the raw markdown source."""
+    from app.schemas.i18n import LocalizedStr
+
+    _run(
+        seed_project(
+            db_session,
+            slug="apexlogic",
+            description=LocalizedStr(
+                es="* Clean data\n* Build reports",
+                en="* Clean data\n* Build reports",
+            ),
+        )
+    )
+    _login(client)
+    r = client.get("/api/v1/admin/projects")
+    data = r.json()["data"]
+    assert len(data) == 1
+    desc = data[0]["description"]
+    # Raw markdown: bullet markers and line breaks preserved.
+    assert desc["es"].startswith("* Clean data")
+    assert "\n" in desc["es"] or " " in desc["es"]  # the raw source text
+    # No HTML tags — admin is the source of truth.
+    assert "<ul>" not in desc["es"]
+    assert "<li>" not in desc["es"]
+
+
+def test_admin_resume_returns_raw_markdown_description(
+    client, admin_user, db_session
+):
+    """`/api/v1/admin/resume` returns the raw markdown source on experience."""
+    from app.schemas.i18n import LocalizedStr
+    from sqlmodel import col, select
+    from app.models.resume import ResumeData
+
+    row = _run(seed_resume_experience(db_session, organization="Acme"))
+    # Override the description with markdown content.
+    fetched = (
+        _run(
+            db_session.execute(
+                select(ResumeData).where(col(ResumeData.id) == row.id)
+            )
+        )
+    ).scalars().one()
+    fetched.description = LocalizedStr(
+        es="**bold** and *italic*",
+        en="**bold** and *italic*",
+    ).model_dump_json()
+    _run(db_session.commit())
+
+    _login(client)
+    r = client.get("/api/v1/admin/resume")
+    data = r.json()["data"]
+    experience_rows = [d for d in data if d["section"] == "experience"]
+    assert experience_rows
+    desc = experience_rows[0]["description"]
+    # Raw markdown: bold and italic markers preserved as text.
+    assert "**bold**" in desc["es"]
+    assert "*italic*" in desc["es"]
+    # No HTML tags from the sanitizer.
+    assert "<strong>" not in desc["es"]
+    assert "<em>" not in desc["es"]

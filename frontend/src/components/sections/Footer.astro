@@ -5,9 +5,13 @@
  * Two-region layout: copyright on the left, social icons on the right.
  * The year is computed at runtime (PR #1 already did this) so the
  * copyright stays current without a rebuild. Social URLs come from
- * src/data/social.json via the Social type — the four required
- * networks are rendered in the locked order (LinkedIn, GitHub,
- * Kaggle, Tableau Public) and any empty URL is hidden.
+ * src/data/social.json — the four required networks are rendered in
+ * the locked order (LinkedIn, Repo, Kaggle, Tableau Public) and any
+ * empty URL is hidden.
+ *
+ * The `repo` platform is provider-agnostic (was `github` in MVP):
+ * the operator can swap the URL in `social.json` to point at
+ * GitLab, Bitbucket, Codeberg, etc. without renaming the field.
  *
  * Platform names are not localized (they are proper nouns in both
  * ES and EN), so this component does not consume the i18n contract
@@ -20,7 +24,7 @@ const year = new Date().getFullYear();
 
 const networks = [
   { platform: "linkedin" as const, key: "linkedin", label: "LinkedIn" },
-  { platform: "github" as const, key: "github", label: "GitHub" },
+  { platform: "repo" as const, key: "repo", label: "Repo" },
   { platform: "kaggle" as const, key: "kaggle", label: "Kaggle" },
   { platform: "tableau" as const, key: "tableau_public", label: "Tableau Public" },
 ];
