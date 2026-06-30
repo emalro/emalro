@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.v1 import auth, health
+from app.api.v1 import auth, health, public
 from app.core.config import get_settings
 from app.core.rate_limit import limiter
 from app.middleware.envelope import EnvelopeMiddleware
@@ -136,6 +136,7 @@ def create_app() -> FastAPI:
     # v1 routers (PR #1 scope).
     app.include_router(health.router, prefix="/api/v1", tags=["health"])
     app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+    app.include_router(public.router, prefix="/api/v1", tags=["public"])
 
     return app
 
