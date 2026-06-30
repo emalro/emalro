@@ -4,14 +4,23 @@
  * Every localizable element in the DOM carries a `data-i18n` attribute
  * whose value is a JSON-encoded LocalizedStr ({ es, en }). On load and
  * whenever the language changes, this script walks the [data-i18n]
- * elements and sets textContent to the right key for the current
- * data-lang attribute on <html>. Empty `en` falls back to `es`
- * silently (REQ-i18n-01).
+ * elements and sets either textContent or innerHTML to the right key
+ * for the current data-lang attribute on <html>. Empty `en` falls back
+ * to `es` silently (REQ-i18n-01).
+ *
+ * For elements that contain Markdown (carrying the optional
+ * `data-i18n-html` attribute), the script runs `renderMarkdown` on the
+ * resolved string and assigns the result to `innerHTML`. This is
+ * required for the non-blog surfaces (personal.summary, experience
+ * descriptions, etc.) which were reformatted as Markdown in the
+ * content polish PR — see `src/lib/markdown.ts` for the renderer.
  *
  * The language selector (LanguageSelector.astro) updates data-lang on
  * click; this script re-runs the swap automatically because it listens
  * to the same buttons.
  */
+
+import { renderMarkdown } from "../lib/markdown";
 
 const LANG_KEY = "lang";
 
@@ -54,7 +63,16 @@ function applyAll() {
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw) as LocalizedStr;
-      el.textContent = resolve(parsed, lang);
+      const text = resolve(parsed, lang);
+      // `data-i18n-html` marks elements whose resolved value is
+      // Markdown and must be rendered as HTML. The renderer is the
+      // same one used by the Astro components at build time so the
+      // server-rendered DOM and the client swap stay in sync.
+      if (el.hasAttribute("data-i18n-html")) {
+        el.innerHTML = renderMarkdown(text);
+      } else {
+        el.textContent = text;
+      }
     } catch {
       /* malformed data-i18n — leave as-is, build-time validator should have caught it */
     }

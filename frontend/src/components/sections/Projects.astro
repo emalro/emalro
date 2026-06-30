@@ -2,6 +2,7 @@
 import projects from "../../data/projects.json";
 import SortControl from "../ui/SortControl.astro";
 import Tag from "../ui/Tag.astro";
+import { renderMarkdown } from "../../lib/markdown";
 
 // Numeric compact form: "2025-03-10" → 20250310, used by sort.ts.
 const sortKey = (iso: string): string => iso.replaceAll("-", "");
@@ -21,7 +22,12 @@ const sortKey = (iso: string): string => iso.replaceAll("-", "");
         <img src={p.image_url} alt={p.title.es} width="320" height="180" loading="lazy" class="aspect-video w-full border-b border-border bg-bg-elevated object-cover" />
         <div class="grid gap-2 px-5 pt-1">
           <h3 class="font-mono text-base font-semibold text-ink-primary group-hover:text-accent" data-i18n={JSON.stringify(p.title)}>{p.title.es}</h3>
-          <p class="text-sm text-ink-secondary" data-i18n={JSON.stringify(p.description)}>{p.description.es}</p>
+          <div
+            class="text-sm text-ink-secondary description-md"
+            data-i18n={JSON.stringify(p.description)}
+            data-i18n-html="true"
+            set:html={renderMarkdown(p.description.es)}
+          />
           <ul class="flex flex-wrap gap-1.5 pt-1">
             {p.tags.map((t) => (<li><Tag label={t} /></li>))}
           </ul>
@@ -32,8 +38,8 @@ const sortKey = (iso: string): string => iso.replaceAll("-", "");
           ))}
           <div class="ml-auto flex items-center gap-1">
             {p.github_url && (
-              <a href={p.github_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="GitHub repository">
-                <span class="font-mono text-xs">GitHub</span>
+              <a href={p.github_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="Repository">
+                <span class="font-mono text-xs">Repo</span>
               </a>
             )}
             {p.demo_url && (
@@ -47,3 +53,12 @@ const sortKey = (iso: string): string => iso.replaceAll("-", "");
     ))}
   </ol>
 </section>
+
+<style>
+  .description-md :global(p) {
+    margin-bottom: 0.25rem;
+  }
+  .description-md :global(em) {
+    font-style: italic;
+  }
+</style>
