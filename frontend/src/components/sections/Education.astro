@@ -45,7 +45,7 @@ const fmt = (ym: string): string => {
           </p>
           {entry.description && (
             <div
-              class="text-sm text-ink-secondary description-md"
+              class="mt-3 text-sm text-ink-secondary description-md"
               data-i18n={JSON.stringify(entry.description)}
               data-i18n-html="true"
               set:html={renderMarkdown(entry.description.es)}
@@ -71,7 +71,7 @@ const fmt = (ym: string): string => {
     margin-bottom: 0.5rem;
   }
   .description-md :global(ul) {
-    padding-left: 1.25rem;
+    padding-left: 0.75rem;
     list-style: disc;
   }
   .description-md :global(li) {
