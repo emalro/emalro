@@ -83,9 +83,15 @@ async def _upsert_projects(session, data: list[dict]) -> int:
             _log(f"  - project {slug!r} already exists, skipping")
             continue
 
-        technologies_ls = [
-            LocalizedStr.model_validate(t) for t in entry.get("technologies", [])
-        ]
+        technologies_ls = []
+        for t in entry.get("technologies", []):
+            if isinstance(t, dict):
+                technologies_ls.append(LocalizedStr.model_validate(t))
+            else:
+                # Plain string in the source data; wrap as
+                # LocalizedStr with the same value in both languages.
+                s = str(t)
+                technologies_ls.append(LocalizedStr(es=s, en=s))
         technologies_json = "[" + ",".join(_ls(t) for t in technologies_ls) + "]"
 
         project = Project(
@@ -284,6 +290,19 @@ async def _run() -> int:
         return 1
 
     _log(f"data dir: {DATA_DIR}")
+
+    # Ensure tables exist (covers the case where alembic was not run
+    # for the first-time local bootstrap; the production flow runs
+    # `alembic upgrade head` first).
+    from sqlmodel import SQLModel
+    from app.core.db import get_engine
+    from app import models  # noqa: F401
+    engine = get_engine()
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(SQLModel.metadata.create_all)
+    except Exception:
+        pass
 
     SessionLocal = get_session_factory()
     async with SessionLocal() as session:
