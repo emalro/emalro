@@ -1,0 +1,115 @@
+---
+/**
+ * Blog detail page at /blog/[slug] (per `blog-section`
+ * REQ-blog-section-02).
+ *
+ * Uses `getStaticPaths` to walk every visible blog post at build
+ * time and emit one static HTML per slug. Each page renders the
+ * post title, formatted `published_at`, the sanitized markdown
+ * body via `MarkdownContent.astro`, the cover image (if any), and
+ * the tags.
+ *
+ * Drafts are excluded automatically because the public
+ * `GET /api/v1/blog` already filters `is_visible = true` at the
+ * SQLModel level (per `drafts-visibility` REQ-02). If the slug
+ * doesn't resolve to a published post, the path is omitted from
+ * `getStaticPaths` -> Astro returns 404 at request time.
+ */
+import Layout from "../../layouts/Layout.astro";
+import MarkdownContent from "../../components/blog/MarkdownContent.astro";
+import { api, requestBuildTime } from "../../lib/api";
+import type { BlogPostDetail, BlogPostSummary } from "../../lib/api";
+
+export async function getStaticPaths() {
+  const list = await api.blog({ limit: 100 });
+  const posts: BlogPostSummary[] = list.data ?? [];
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { slug: post.slug },
+  }));
+}
+
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props as Props;
+
+const post: BlogPostDetail = await api.blogPost(slug);
+
+const lang = (Astro.url.searchParams.get("lang") === "en" ? "en" : "es") as
+  | "es"
+  | "en";
+
+const title = post.title[lang] || post.title.es;
+const markdown = post.content[lang] || post.content.es;
+
+// Date formatter (same shape as BlogCard).
+const months: Record<"es" | "en", string[]> = {
+  es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+};
+function formatDate(iso: string | null): string {
+  if (!iso) return "";
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return iso;
+  return `${m[3]} ${months[lang][Number(m[2]) - 1] ?? m[2]} ${m[1]}`;
+}
+const publishedLabel = post.published_at ? formatDate(post.published_at) : "";
+const pageTitle = `${title} — Blog`;
+---
+
+<Layout title={pageTitle} description={title}>
+  <article class="grid gap-6 py-12 md:py-16">
+    <header class="grid gap-4">
+      <p class="font-mono text-xs uppercase tracking-widest text-accent">
+        <a
+          href="/blog"
+          class="hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
+        >
+          {lang === "en" ? "← Blog" : "← Blog"}
+        </a>
+      </p>
+      <h1 class="font-mono text-3xl font-bold leading-tight md:text-4xl">
+        {title}
+      </h1>
+      {publishedLabel && (
+        <time
+          datetime={post.published_at ?? ""}
+          class="font-mono text-xs uppercase tracking-widest text-ink-tertiary"
+        >
+          {publishedLabel}
+        </time>
+      )}
+    </header>
+
+    {post.cover_image_url && (
+      <img
+        src={post.cover_image_url}
+        alt={title}
+        width="1200"
+        height="630"
+        loading="eager"
+        class="w-full rounded-lg border border-border object-cover"
+      />
+    )}
+
+    <MarkdownContent markdown={markdown} lang={lang} />
+
+    {post.tags.length > 0 && (
+      <footer class="flex flex-wrap items-center gap-2 border-t border-border pt-6">
+        <span class="font-mono text-[11px] uppercase tracking-widest text-ink-tertiary">
+          {lang === "en" ? "Tags" : "Tags"}
+        </span>
+        {post.tags.map((t) => (
+          <span
+            class="inline-flex items-center rounded-md border border-border bg-bg-surface px-2 py-0.5 font-mono text-[11px] text-ink-secondary"
+            data-tag={t}
+          >
+            {t}
+          </span>
+        ))}
+      </footer>
+    )}
+  </article>
+</Layout>
