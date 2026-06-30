@@ -1,0 +1,49 @@
+---
+import projects from "../../data/projects.json";
+import SortControl from "../ui/SortControl.astro";
+import Tag from "../ui/Tag.astro";
+
+// Numeric compact form: "2025-03-10" → 20250310, used by sort.ts.
+const sortKey = (iso: string): string => iso.replaceAll("-", "");
+---
+
+<section id="projects" class="grid gap-8 py-16 md:py-24">
+  <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div>
+      <p class="font-mono text-xs uppercase tracking-widest text-accent">// 03</p>
+      <h2 class="mt-2 font-mono text-2xl font-bold md:text-3xl" data-i18n={JSON.stringify({ es: "Proyectos", en: "Projects" })}>Proyectos</h2>
+    </div>
+    <SortControl target="projects-list" defaultDir="desc" />
+  </div>
+  <ol id="projects-list" data-sort-root data-sort-dir="desc" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    {projects.map((p) => (
+      <li class="group grid grid-rows-[auto_1fr_auto] gap-3 overflow-hidden rounded-lg border border-border bg-bg-surface transition-colors hover:border-accent" data-sort-value={sortKey(p.created_at)}>
+        <img src={p.image_url} alt={p.title.es} width="320" height="180" loading="lazy" class="aspect-video w-full border-b border-border bg-bg-elevated object-cover" />
+        <div class="grid gap-2 px-5 pt-1">
+          <h3 class="font-mono text-base font-semibold text-ink-primary group-hover:text-accent" data-i18n={JSON.stringify(p.title)}>{p.title.es}</h3>
+          <p class="text-sm text-ink-secondary" data-i18n={JSON.stringify(p.description)}>{p.description.es}</p>
+          <ul class="flex flex-wrap gap-1.5 pt-1">
+            {p.tags.map((t) => (<li><Tag label={t} /></li>))}
+          </ul>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 border-t border-border bg-bg-elevated px-5 py-3">
+          {p.technologies.map((t) => (
+            <span class="font-mono text-[11px] text-ink-tertiary">{t}</span>
+          ))}
+          <div class="ml-auto flex items-center gap-1">
+            {p.github_url && (
+              <a href={p.github_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="GitHub repository">
+                <span class="font-mono text-xs">GitHub</span>
+              </a>
+            )}
+            {p.demo_url && (
+              <a href={p.demo_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="Live demo">
+                <span class="font-mono text-xs text-accent">Demo</span>
+              </a>
+            )}
+          </div>
+        </div>
+      </li>
+    ))}
+  </ol>
+</section>

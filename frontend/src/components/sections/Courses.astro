@@ -1,0 +1,37 @@
+---
+import courses from "../../data/courses.json";
+import SortControl from "../ui/SortControl.astro";
+
+// Numeric compact form: "2024-08-12" → 20240812, used by sort.ts.
+const sortKey = (iso: string): string => iso.replaceAll("-", "");
+---
+
+<section id="courses" class="grid gap-8 py-16 md:py-24">
+  <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div>
+      <p class="font-mono text-xs uppercase tracking-widest text-accent">// 04</p>
+      <h2 class="mt-2 font-mono text-2xl font-bold md:text-3xl" data-i18n={JSON.stringify({ es: "Cursos", en: "Courses" })}>Cursos</h2>
+    </div>
+    <SortControl target="courses-list" defaultDir="desc" />
+  </div>
+  <ol id="courses-list" data-sort-root data-sort-dir="desc" class="grid gap-3">
+    {courses.map((c) => (
+      <li class="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-lg border border-border bg-bg-surface p-4 transition-colors hover:border-accent md:p-5" data-sort-value={sortKey(c.created_at)}>
+        <img src={c.platform_logo_url} alt={c.platform} width="48" height="48" loading="lazy" class="h-12 w-12 rounded-md border border-border bg-bg-elevated object-contain p-1" />
+        <div class="grid gap-1">
+          <p class="font-mono text-[11px] uppercase tracking-widest text-ink-tertiary">{c.platform}</p>
+          <h3 class="font-mono text-sm font-semibold text-ink-primary md:text-base" data-i18n={JSON.stringify(c.name)}>{c.name.es}</h3>
+        </div>
+        <div class="flex items-center">
+          {c.verification_url ? (
+            <a href={c.verification_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="Verify certificate">
+              <span class="font-mono text-xs text-accent">Verify</span>
+            </a>
+          ) : (
+            <span class="font-mono text-[11px] text-ink-tertiary" aria-label="No verification link">—</span>
+          )}
+        </div>
+      </li>
+    ))}
+  </ol>
+</section>

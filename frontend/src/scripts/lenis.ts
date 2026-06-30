@@ -8,15 +8,19 @@
  * `scroll-margin-top: var(--navbar-h)` in global.css for non-Lenis
  * paths like keyboard nav and direct anchor URLs).
  *
- * TODO(reduced-motion): PR #3 must gate the Lenis init behind a
- * `window.matchMedia('(prefers-reduced-motion: reduce)').matches`
- * check. Users with the preference set will get native scrolling and
- * a static role line.
+ * When `prefers-reduced-motion: reduce` is set, this module is a
+ * no-op: native browser scroll is used, and global.css overrides
+ * `scroll-behavior` to auto so jumps are instant. The CSS gate also
+ * flattens any Lenis transition that may have been scheduled.
  */
 
 import Lenis from "lenis";
 
 const NAVBAR_OFFSET_PX = -64; // --navbar-h: 4rem in global.css
+
+function reducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 function targetFor(href: string): HTMLElement | null {
   if (!href.startsWith("#") || href.length < 2) return null;
@@ -24,6 +28,9 @@ function targetFor(href: string): HTMLElement | null {
 }
 
 function init() {
+  // Native scroll is enough when the user has opted out of motion.
+  if (reducedMotion()) return;
+
   const lenis = new Lenis({
     duration: 1.1,
     smoothWheel: true,

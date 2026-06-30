@@ -15,7 +15,13 @@ type Dir = "desc" | "asc";
 function valueOf(el: HTMLElement): number {
   const raw = el.dataset.sortValue;
   if (!raw || raw === "null") return Number.POSITIVE_INFINITY;
-  const n = Number(raw);
+  // Accept either a numeric string ("1741564800000") or an ISO date
+  // string ("2024-09" / "2025-03-10"). For dates, strip the dashes so
+  // the result compares correctly as a number (20250310 > 20231122).
+  const compact = /^\d{4}(-\d{2}){0,2}$/.test(raw)
+    ? raw.replaceAll("-", "")
+    : raw;
+  const n = Number(compact);
   return Number.isFinite(n) ? n : Number.NEGATIVE_INFINITY;
 }
 

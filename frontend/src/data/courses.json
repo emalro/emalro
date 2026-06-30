@@ -1,13 +1,45 @@
 [
   {
-    "id": "course-placeholder-1",
-    "platform": "[PLACEHOLDER] Platform",
+    "id": "course-1",
+    "platform": "Coursera",
     "platform_logo_url": "/img/platforms/placeholder.svg",
     "name": {
-      "es": "[PLACEHOLDER] Nombre del curso",
-      "en": "[PLACEHOLDER] Course name"
+      "es": "[PLACEHOLDER] Google Data Analytics Certificate",
+      "en": "[PLACEHOLDER] Google Data Analytics Certificate"
     },
-    "verification_url": "https://[PLACEHOLDER]/verify",
-    "created_at": "2024-03-15"
+    "verification_url": "https://www.coursera.org/[PLACEHOLDER]",
+    "created_at": "2024-08-12"
+  },
+  {
+    "id": "course-2",
+    "platform": "Udemy",
+    "platform_logo_url": "/img/platforms/sample-2.svg",
+    "name": {
+      "es": "[PLACEHOLDER] SQL para análisis de datos",
+      "en": "[PLACEHOLDER] SQL for data analysis"
+    },
+    "verification_url": "https://www.udemy.com/certificate/[PLACEHOLDER]/",
+    "created_at": "2024-02-05"
+  },
+  {
+    "id": "course-3",
+    "platform": "LinkedIn Learning",
+    "platform_logo_url": "/img/platforms/sample-3.svg",
+    "name": {
+      "es": "[PLACEHOLDER] Power BI esencial",
+      "en": "[PLACEHOLDER] Power BI essentials"
+    },
+    "verification_url": "https://www.linkedin.com/learning/certificates/[PLACEHOLDER]",
+    "created_at": "2023-10-21"
+  },
+  {
+    "id": "course-4",
+    "platform": "DataCamp",
+    "platform_logo_url": "/img/platforms/sample-3.svg",
+    "name": {
+      "es": "[PLACEHOLDER] Python para ciencia de datos",
+      "en": "[PLACEHOLDER] Python for data science"
+    },
+    "created_at": "2023-05-09"
   }
 ]
