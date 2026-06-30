@@ -11,6 +11,7 @@ Subsequent PRs mount the v1 routers (auth, public, admin, contacts).
 from __future__ import annotations
 
 import logging
+import sys
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -26,15 +27,27 @@ from app.core.rate_limit import limiter
 from app.middleware.envelope import EnvelopeMiddleware
 from app.middleware.request_id import RequestIdMiddleware
 from app.schemas.envelope import Envelope, EnvelopeError
-from app.services.logging import configure_logging
 
 logger = logging.getLogger(__name__)
+
+
+def _configure_logging() -> None:
+    """Configure the root logger (idempotent)."""
+    root = logging.getLogger()
+    if any(isinstance(h, logging.StreamHandler) for h in root.handlers):
+        return
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    )
+    root.addHandler(handler)
+    root.setLevel(logging.INFO)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan: configure logging on startup."""
-    configure_logging()
+    _configure_logging()
     settings = get_settings()
     logger.info(
         "emalro backend starting",
