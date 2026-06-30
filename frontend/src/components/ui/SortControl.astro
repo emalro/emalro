@@ -11,17 +11,20 @@ const options = [
   { dir: "desc", label: "Reciente" },
   { dir: "asc", label: "Antiguo" },
 ] as const;
+const ChevronDown = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
+const ChevronUp = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>`;
 ---
 <div data-sort-group class="inline-flex items-center overflow-hidden rounded-md border border-border bg-bg-surface font-mono text-xs" role="group" aria-label="Sort order">
   {options.map((o) => (
     <button
       type="button"
-      class="px-2.5 py-1.5 text-ink-secondary data-[active=true]:bg-accent-muted data-[active=true]:text-accent"
+      class="inline-flex items-center gap-1 px-2.5 py-1.5 text-ink-secondary data-[active=true]:bg-accent-muted data-[active=true]:text-accent"
       data-sort-control={target}
       data-sort-dir={o.dir}
       data-active={(o.dir === defaultDir).toString()}
       aria-pressed={(o.dir === defaultDir).toString()}
     >
+      <Fragment set:html={o.dir === "desc" ? ChevronDown : ChevronUp} />
       {o.label}
     </button>
   ))}
