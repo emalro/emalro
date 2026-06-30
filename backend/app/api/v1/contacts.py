@@ -10,8 +10,6 @@ Validation (Pydantic) rejects bad payloads with 422. The success
 path returns 201 with the new row's `id` and `received_at`.
 """
 
-from __future__ import annotations
-
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status

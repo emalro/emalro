@@ -164,7 +164,7 @@ async def admin_list_contacts(
         )
     ).scalars().all()
 
-    items = [ContactListItem.model_validate(r) for r in rows]
+    items = [ContactListItem.model_validate(r, from_attributes=True) for r in rows]
     return PaginatedEnvelope[ContactListItem](
         data=items,
         meta=PageMeta(
@@ -197,7 +197,7 @@ async def admin_list_contacts_trash(
         )
     ).scalars().all()
 
-    items = [ContactListItem.model_validate(r) for r in rows]
+    items = [ContactListItem.model_validate(r, from_attributes=True) for r in rows]
     return PaginatedEnvelope[ContactListItem](
         data=items,
         meta=PageMeta(
