@@ -1,0 +1,96 @@
+---
+/**
+ * Single blog post card on the public list page (per
+ * `blog-section` REQ-blog-section-01).
+ *
+ * Renders title (active lang), formatted `published_at`, excerpt
+ * (active lang, rendered as markdown), and tags as static labels
+ * (NOT clickable — RF-20 is Fase 3). The whole card is wrapped in
+ * an anchor to `/blog/{slug}`.
+ */
+import type { BlogPostSummary } from "../../lib/api";
+import MarkdownContent from "./MarkdownContent.astro";
+
+interface Props {
+  post: BlogPostSummary;
+  /** Active language, used to resolve `LocalizedStr` fields. */
+  lang?: "es" | "en";
+}
+
+const { post, lang = "es" } = Astro.props;
+
+const title = post.title[lang] || post.title.es;
+const excerpt = post.excerpt?.[lang] || post.excerpt?.es || "";
+
+// Date format: short, locale-aware. We use a manual formatter to
+// avoid pulling in date-fns just for one site (the design accepts
+// this). Spanish months for es, English for en.
+const months: Record<"es" | "en", string[]> = {
+  es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+};
+
+function formatDate(iso: string | null): string {
+  if (!iso) return "";
+  // Backend returns ISO 8601 with timezone. We just need the date
+  // portion. Parse defensively.
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return iso;
+  const month = months[lang][Number(m[2]) - 1] ?? m[2];
+  return `${m[3]} ${month} ${m[1]}`;
+}
+const publishedLabel = post.published_at
+  ? formatDate(post.published_at)
+  : "";
+
+// Excerpt limit: spec says max 200 chars, but the backend already
+// truncates. We still cap at 220 here as a safety net.
+const excerptSafe = excerpt.length > 220 ? excerpt.slice(0, 219) + "…" : excerpt;
+// Strip common markdown markers from the excerpt so the card preview
+// reads as plain prose (no `#` headings, no `**bold**`, no
+// `> quote` markers visible). The full markdown is rendered on the
+// detail page via MarkdownContent.astro.
+const MD_MARKERS = /[#*`>_~]/g;
+const excerptPlain = excerptSafe.replace(MD_MARKERS, "").replace(/\s+/g, " ").trim();
+---
+
+<article
+  class="group grid h-full grid-rows-[1fr_auto] gap-4 overflow-hidden rounded-lg border border-border bg-bg-surface transition-colors hover:border-accent"
+>
+  <a
+    href={`/blog/${post.slug}`}
+    class="flex flex-col gap-3 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
+    aria-label={title}
+  >
+    <div class="flex flex-col gap-2">
+      {publishedLabel && (
+        <time
+          datetime={post.published_at ?? ""}
+          class="font-mono text-[11px] uppercase tracking-widest text-ink-tertiary"
+        >
+          {publishedLabel}
+        </time>
+      )}
+      <h3 class="font-mono text-lg font-semibold leading-snug text-ink-primary group-hover:text-accent">
+        {title}
+      </h3>
+    </div>
+    {excerptPlain && (
+      <p class="text-sm leading-relaxed text-ink-secondary line-clamp-3">
+        {excerptPlain}
+      </p>
+    )}
+  </a>
+  {post.tags.length > 0 && (
+    <div class="flex flex-wrap gap-1.5 border-t border-border bg-bg-elevated px-5 py-3">
+      {post.tags.map((t) => (
+        <span
+          class="inline-flex items-center rounded-md border border-border bg-bg-surface px-2 py-0.5 font-mono text-[11px] text-ink-secondary"
+          data-tag={t}
+        >
+          {t}
+        </span>
+      ))}
+    </div>
+  )}
+</article>

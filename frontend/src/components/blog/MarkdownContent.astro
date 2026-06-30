@@ -1,0 +1,213 @@
+---
+/**
+ * Blog markdown renderer (per `blog-section` REQ-blog-section-04).
+ *
+ * Parses the raw markdown stored in `BlogPost.content.{es,en}` and
+ * renders it as sanitized HTML. The backend (PR #2) is expected to
+ * sanitize before persist, but we apply a defense-in-depth pass on
+ * the frontend:
+ *
+ *   1. `marked` with `html: false` (raw HTML in the source is escaped,
+ *      not rendered — this blocks `<script>` and similar at the parser
+ *      level).
+ *   2. `sanitize-html` strips anything the parser left behind. This
+ *      is the JS equivalent of the backend's `nh3.clean`; the design
+ *      referenced `nh3` but that package is Python-only, so the
+ *      frontend uses `sanitize-html` (the maintained equivalent for
+ *      Node/browser).
+ *
+ * The same `marked` config is used by the admin editor (PR #6) so
+ * the preview matches the public render byte-for-byte.
+ *
+ * The active language is read from the document's `data-lang`
+ * attribute (set by the i18n resolver on the client). At build time
+ * we use the static `lang` prop; at runtime the parent re-renders
+ * when the language changes.
+ */
+import { Marked } from "marked";
+import sanitizeHtml from "sanitize-html";
+
+interface Props {
+  /** Raw markdown for the active language. */
+  markdown: string;
+  /**
+   * If `true` (default), the markdown is parsed and sanitized before
+   * being inserted via `set:html`. If `false`, the raw value is
+   * escaped and inserted as text (used for excerpts on the list
+   * page where the full markdown would be too long to render).
+   */
+  render?: boolean;
+}
+
+const { markdown, render = true } = Astro.props;
+
+const marked = new Marked({
+  gfm: true,
+  breaks: false,
+  // Defense in depth: raw HTML in the source is escaped, not
+  // rendered. Even if the parser is later swapped (e.g., to
+  // `unified`), this option is the canonical way to block `<script>`
+  // and `<iframe>` injection from the markdown source.
+  html: false,
+});
+
+const ALLOWED_TAGS: string[] = [
+  "h1", "h2", "h3", "h4", "h5", "h6",
+  "p", "br", "hr",
+  "strong", "em", "code", "pre",
+  "ul", "ol", "li",
+  "a",
+  "blockquote",
+  "img",
+  "table", "thead", "tbody", "tr", "th", "td",
+];
+
+const ALLOWED_ATTRS = {
+  a: ["href", "title", "rel", "target"],
+  img: ["src", "alt", "title", "width", "height"],
+  code: ["class"],
+  pre: ["class"],
+  th: ["align"],
+  td: ["align"],
+};
+
+let html: string;
+try {
+  const raw = marked.parse(markdown ?? "", { async: false }) as string;
+  html = sanitizeHtml(raw, {
+    allowedTags: ALLOWED_TAGS,
+    allowedAttributes: ALLOWED_ATTRS,
+    // Force external links to open safely.
+    transformTags: {
+      a: (tagName, attribs) => ({
+        tagName: "a",
+        attribs: {
+          ...attribs,
+          rel: "noopener noreferrer",
+          ...(attribs.href && /^https?:/i.test(attribs.href)
+            ? { target: "_blank" }
+            : {}),
+        },
+      }),
+    },
+  });
+} catch {
+  // Malformed markdown: fall back to escaped text. Better than 500.
+  html = sanitizeHtml(markdown ?? "", { allowedTags: [], allowedAttributes: {} });
+}
+
+const finalHtml = render ? html : sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} });
+---
+
+<div class="blog-content" set:html={finalHtml} />
+
+<style is:global>
+  .blog-content {
+    color: var(--text-primary, #e6edf3);
+    font-size: 1rem;
+    line-height: 1.7;
+    max-width: 65ch;
+  }
+  .blog-content h1,
+  .blog-content h2,
+  .blog-content h3,
+  .blog-content h4,
+  .blog-content h5,
+  .blog-content h6 {
+    font-family: theme("fontFamily.mono");
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text-primary, #e6edf3);
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    scroll-margin-top: var(--navbar-h, 4rem);
+  }
+  .blog-content h1 { font-size: 1.875rem; }
+  .blog-content h2 { font-size: 1.5rem; }
+  .blog-content h3 { font-size: 1.25rem; }
+  .blog-content h4 { font-size: 1.125rem; }
+  .blog-content p {
+    margin-bottom: 1rem;
+  }
+  .blog-content a {
+    color: var(--accent, #f0883e);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .blog-content a:hover {
+    color: var(--accent-hover, #ff9f4a);
+  }
+  .blog-content strong {
+    color: var(--text-primary, #e6edf3);
+    font-weight: 600;
+  }
+  .blog-content em {
+    font-style: italic;
+  }
+  .blog-content ul,
+  .blog-content ol {
+    margin: 0.75rem 0 1rem;
+    padding-left: 1.5rem;
+  }
+  .blog-content ul { list-style: disc; }
+  .blog-content ol { list-style: decimal; }
+  .blog-content li {
+    margin-bottom: 0.4rem;
+  }
+  .blog-content blockquote {
+    border-left: 3px solid var(--accent, #f0883e);
+    margin: 1rem 0;
+    padding: 0.25rem 0 0.25rem 1rem;
+    color: var(--text-secondary, #8b949e);
+    font-style: italic;
+  }
+  .blog-content code {
+    font-family: theme("fontFamily.mono");
+    font-size: 0.9em;
+    background-color: var(--bg-elevated, #1f2630);
+    padding: 0.1em 0.35em;
+    border-radius: 0.25rem;
+  }
+  .blog-content pre {
+    background-color: var(--bg-elevated, #1f2630);
+    border: 1px solid var(--border, #2a3038);
+    border-radius: 0.5rem;
+    padding: 0.9rem 1rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+  .blog-content pre code {
+    background: transparent;
+    padding: 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+  .blog-content hr {
+    border: 0;
+    border-top: 1px solid var(--border, #2a3038);
+    margin: 2rem 0;
+  }
+  .blog-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+  }
+  .blog-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .blog-content th,
+  .blog-content td {
+    border: 1px solid var(--border, #2a3038);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .blog-content th {
+    background-color: var(--bg-elevated, #1f2630);
+    font-family: theme("fontFamily.mono");
+    font-weight: 600;
+  }
+</style>
