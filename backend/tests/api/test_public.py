@@ -441,3 +441,179 @@ async def test_tags_excludes_drafts(client, db_session):
     data = r.json()["data"]
     assert "visible-tag" in data
     assert "draft-tag" not in data
+
+
+# ---------------------------------------------------------------------------
+# Public read sanitization (content polish).
+#
+# The public read path sanitizes the markdown `description` and
+# `summary` fields so the response carries safe HTML. The admin read
+# path keeps the raw markdown so the operator can edit the source
+# (PR #6 will wire the CodeMirror editor). See
+# `tests/api/test_admin.py` for the matching admin-side assertions.
+# ---------------------------------------------------------------------------
+
+
+from app.schemas.i18n import LocalizedStr
+
+
+@pytest.mark.asyncio
+async def test_cv_sanitizes_personal_summary(client, db_session):
+    """`/api/v1/cv` returns sanitized HTML for `personal.summary`."""
+    from tests.api._seed import seed_resume_personal
+
+    await seed_resume_personal(
+        db_session,
+        extra={
+            "name": {"es": "Emanuel", "en": "Emanuel"},
+            "role": {"es": "Data Analyst", "en": "Data Analyst"},
+            "summary": {
+                "es": "**Hello** and [see](https://example.com) for context.",
+                "en": "**Hello** and [see](https://example.com) for context.",
+            },
+            "avatar_url": "/img/avatar.svg",
+            "hardSkills": [],
+            "softSkills": [],
+        },
+    )
+
+    r = client.get("/api/v1/cv")
+    data = r.json()["data"]
+    summary = data["personal"]["summary"]
+    # Markdown was rendered to HTML.
+    assert "<strong>Hello</strong>" in summary["es"]
+    assert 'href="https://example.com"' in summary["es"]
+    # Wrapped in a <p>.
+    assert summary["es"].startswith("<p>")
+
+
+@pytest.mark.asyncio
+async def test_cv_sanitizes_experience_description(client, db_session):
+    """`/api/v1/cv` returns sanitized bullet list for experience descriptions."""
+    from tests.api._seed import seed_resume_experience
+
+    await seed_resume_experience(
+        db_session,
+        organization="Acme",
+        # Custom description with markdown bullets.
+    )
+    # Override the description after the default seed: re-fetch the row
+    # and patch the description directly.
+    from sqlmodel import col, select
+    from app.models.resume import ResumeData
+
+    row = (
+        await db_session.execute(
+            select(ResumeData).where(col(ResumeData.organization if False else ResumeData.subtitle) == "Acme")  # type: ignore[arg-type]
+        )
+    ).scalars().one()
+    row.description = LocalizedStr(
+        es="* clean data\n* build reports",
+        en="* clean data\n* build reports",
+    ).model_dump_json()
+    await db_session.commit()
+
+    r = client.get("/api/v1/cv")
+    data = r.json()["data"]
+    desc = data["experience"][0]["description"]
+    assert desc["es"] == "<ul><li>clean data</li><li>build reports</li></ul>"
+
+
+@pytest.mark.asyncio
+async def test_cv_sanitizes_education_description(client, db_session):
+    """`/api/v1/cv` returns sanitized education description."""
+    from tests.api._seed import seed_resume_education
+
+    await seed_resume_education(
+        db_session,
+        institution="Urquiza",
+    )
+    from sqlmodel import col, select
+    from app.models.resume import ResumeData
+    from app.schemas.i18n import LocalizedStr
+
+    row = (
+        await db_session.execute(
+            select(ResumeData).where(col(ResumeData.subtitle) == "Urquiza")
+        )
+    ).scalars().one()
+    row.description = LocalizedStr(
+        es="**Specialized** training in *UML*.",
+        en="**Specialized** training in *UML*.",
+    ).model_dump_json()
+    await db_session.commit()
+
+    r = client.get("/api/v1/cv")
+    data = r.json()["data"]
+    desc = data["education"][0]["description"]
+    assert "<strong>Specialized</strong>" in desc["es"]
+    assert "<em>UML</em>" in desc["es"]
+
+
+@pytest.mark.asyncio
+async def test_projects_endpoint_sanitizes_description(client, db_session):
+    """`/api/v1/projects` returns sanitized HTML for project descriptions."""
+    from tests.api._seed import seed_project
+
+    await seed_project(
+        db_session,
+        slug="apexlogic",
+        description=LocalizedStr(
+            es="* Cleaning data\n* Building reports",
+            en="* Cleaning data\n* Building reports",
+        ),
+    )
+
+    r = client.get("/api/v1/projects")
+    data = r.json()["data"]
+    assert len(data) == 1
+    desc = data[0]["description"]
+    assert desc["es"] == "<ul><li>Cleaning data</li><li>Building reports</li></ul>"
+
+
+@pytest.mark.asyncio
+async def test_projects_endpoint_strips_xss_in_description(client, db_session):
+    """Public project description is sanitized against XSS payloads."""
+    from tests.api._seed import seed_project
+
+    await seed_project(
+        db_session,
+        slug="evil",
+        description=LocalizedStr(
+            es="[click](javascript:alert(1))",
+            en="[click](javascript:alert(1))",
+        ),
+    )
+
+    r = client.get("/api/v1/projects")
+    data = r.json()["data"]
+    desc = data[0]["description"]
+    assert "javascript:" not in desc["es"]
+    assert "<a " not in desc["es"]
+    # The label is preserved as plain text.
+    assert "click" in desc["es"]
+
+
+@pytest.mark.asyncio
+async def test_explore_sanitizes_project_excerpt(client, db_session):
+    """`/api/v1/explore` returns sanitized project excerpt (built from description)."""
+    from tests.api._seed import seed_project
+
+    await seed_project(
+        db_session,
+        slug="p-1",
+        tags=["x"],
+        description=LocalizedStr(
+            es="* Cleans data\n* Builds reports",
+            en="* Cleans data\n* Builds reports",
+        ),
+    )
+
+    r = client.get("/api/v1/explore?tags=x")
+    data = r.json()["data"]
+    assert len(data) == 1
+    excerpt = data[0]["excerpt"]
+    assert excerpt is not None
+    assert "<ul>" in excerpt["es"]
+    assert "<li>Cleans data</li>" in excerpt["es"]
+
