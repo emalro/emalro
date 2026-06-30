@@ -27,6 +27,11 @@ from starlette.responses import JSONResponse, Response
 # non-cacheable by design). Auth + admin responses are private.
 _NO_CACHE_PATHS = ("/api/v1/auth/", "/api/v1/admin/")
 
+# Default cache headers for public reads (per design section 16):
+# `Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400`
+_PUBLIC_CACHE_CONTROL = "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400"
+_NO_STORE = "no-store, private"
+
 
 def _compute_etag(body: bytes) -> str:
     """Return a quoted SHA-256 of the canonical JSON body."""
@@ -58,6 +63,9 @@ class EnvelopeMiddleware(BaseHTTPMiddleware):
         # Skip admin / auth paths (private responses, no ETag).
         path = request.url.path
         if any(path.startswith(p) for p in _NO_CACHE_PATHS):
+            # For private paths, set `Cache-Control: no-store, private`
+            # (per design section 6: admin + auth responses are private).
+            response.headers["cache-control"] = _NO_STORE
             return response
 
         # Drain the response body to inspect / wrap / short-circuit.
@@ -90,14 +98,16 @@ class EnvelopeMiddleware(BaseHTTPMiddleware):
                 response.headers, drop={"content-length", "etag", "content-type"}
             )
             headers["ETag"] = etag
+            headers["Cache-Control"] = _PUBLIC_CACHE_CONTROL
             return Response(status_code=304, headers=headers)
 
         # Build the final response, preserving any cookies/headers from the
         # original response (e.g. `set_cookie` calls in route handlers).
         new_headers = _drop_headers(
-            response.headers, drop={"content-length", "etag"}
+            response.headers, drop={"content-length", "etag", "cache-control"}
         )
         new_headers["ETag"] = etag
+        new_headers["Cache-Control"] = _PUBLIC_CACHE_CONTROL
         new_headers["content-type"] = "application/json"
         new_resp = Response(
             content=new_body,
