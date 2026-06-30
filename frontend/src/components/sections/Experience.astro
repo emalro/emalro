@@ -20,7 +20,7 @@ const fmt = (ym: string): string => {
   </div>
   <ol id="experience-list" data-sort-root data-sort-dir="desc" class="grid gap-4">
     {experience.map((entry) => (
-      <li class="grid gap-4 rounded-lg border border-border bg-bg-surface p-5 md:grid-cols-[auto_1fr_auto] md:items-start" data-sort-value={entry.start_date}>
+      <li class="grid gap-4 rounded-lg border border-border bg-bg-surface px-3 py-5 md:grid-cols-[auto_1fr_auto] md:items-start" data-sort-value={entry.start_date}>
         <img src={entry.logo_url} alt={entry.organization} width="40" height="40" loading="lazy" class="mt-1 h-10 w-10 rounded-md border border-border bg-bg-elevated object-contain p-1" />
         <div class="grid gap-1.5">
           <h3 class="font-mono text-xl font-semibold text-ink-primary md:text-2xl" data-i18n={JSON.stringify(entry.role)}>{entry.role.es}</h3>
