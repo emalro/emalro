@@ -1,0 +1,63 @@
+---
+/**
+ * Blog list page at /blog (per `blog-section` REQ-blog-section-01).
+ *
+ * Fetches `GET /api/v1/blog` at Astro build time (via
+ * `getStaticPaths`-style top-level await). Renders a chronological
+ * grid of `BlogCard` items.
+ *
+ * Build-time strategy (per design Section 15): the same `api` object
+ * used by admin runtime consumers is used here. Build time uses
+ * Astro's default 10s timeout.
+ */
+import Layout from "../../layouts/Layout.astro";
+import BlogList from "../../components/blog/BlogList.astro";
+import { api, requestBuildTime } from "../../lib/api";
+import type { BlogPostSummary, PaginatedResponse } from "../../lib/api";
+
+const response: PaginatedResponse<BlogPostSummary> = await api.blog({
+  limit: 100,
+});
+const posts: BlogPostSummary[] = response.data ?? [];
+
+// Default active language is `es` (the i18n resolver falls back to it
+// at runtime). The i18n resolver re-reads `<html data-lang>` after
+// load, so the user can switch languages without a rebuild.
+const lang = (Astro.url.searchParams.get("lang") === "en" ? "en" : "es") as
+  | "es"
+  | "en";
+
+const eyebrow = "// blog";
+const headingEs = "Posts";
+const headingEn = "Posts";
+const heading = lang === "en" ? headingEn : headingEs;
+const title = lang === "en" ? "Blog — Emanuel Romero" : "Blog — Emanuel Romero";
+const description =
+  lang === "en"
+    ? "Notes on data analysis, functional analysis, and the IT world."
+    : "Notas sobre análisis de datos, análisis funcional y el mundo IT.";
+---
+
+<Layout title={title} description={description}>
+  <header class="grid gap-3 py-12 md:py-16">
+    <p class="font-mono text-xs uppercase tracking-widest text-accent">{eyebrow}</p>
+    <h1 class="font-mono text-3xl font-bold md:text-5xl">{heading}</h1>
+    <p class="max-w-2xl text-base text-ink-secondary md:text-lg">
+      {lang === "en"
+        ? "Long-form notes on data, code, and the work behind them."
+        : "Notas largas sobre datos, código y el trabajo detrás."}
+    </p>
+  </header>
+  <BlogList
+    posts={posts}
+    lang={lang}
+  />
+  <p class="mt-12 text-sm text-ink-tertiary">
+    <a
+      href="/"
+      class="font-mono text-accent hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
+    >
+      {lang === "en" ? "← Back to home" : "← Volver al inicio"}
+    </a>
+  </p>
+</Layout>
