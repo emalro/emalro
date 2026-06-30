@@ -1,17 +1,32 @@
 [
   {
     "id": "edu-1",
-    "institution": "[PLACEHOLDER] University",
-    "logo_url": "/img/institutions/univ.svg",
+    "institution": "Esc. Sup. N° 49 Cap. Justo José de Urquiza",
+    "logo_url": "/img/institutions/urquiza.svg",
     "degree": {
-      "es": "[PLACEHOLDER] Licenciatura en Ciencias de Datos",
-      "en": "[PLACEHOLDER] BSc in Data Science"
+      "es": "Higher Technician in Functional Analysis of Computer Systems",
+      "en": "Higher Technician in Functional Analysis of Computer Systems"
     },
-    "start_date": "2018-03",
-    "end_date": "2022-12",
+    "start_date": "2026-01",
+    "end_date": null,
     "description": {
-      "es": "[PLACEHOLDER] Tesis y proyectos destacados en analítica.",
-      "en": "[PLACEHOLDER] Thesis and notable analytics projects."
+      "es": "Specialized training in Functional Analysis, elicitation and specification of functional requirements and design of IT solutions. Experience in requirements elicitation techniques (interviews, workshops, observation) and stakeholder management. Proficiency in UML (Use Case, Sequence, Class, Activity, and State Diagrams) for system modeling. Business process modeling, database design, and application of agile and traditional methodologies. Professional internships applying the complete functional analysis cycle: elicitation → specification → validation with users.",
+      "en": "Specialized training in Functional Analysis, elicitation and specification of functional requirements and design of IT solutions. Experience in requirements elicitation techniques (interviews, workshops, observation) and stakeholder management. Proficiency in UML (Use Case, Sequence, Class, Activity, and State Diagrams) for system modeling. Business process modeling, database design, and application of agile and traditional methodologies. Professional internships applying the complete functional analysis cycle: elicitation → specification → validation with users."
+    }
+  },
+  {
+    "id": "edu-2",
+    "institution": "E.E.T.P. N.° 628 \"Servando Bayo\"",
+    "logo_url": "/img/institutions/bayo.svg",
+    "degree": {
+      "es": "Professional and Personal IT Technician",
+      "en": "Professional and Personal IT Technician"
+    },
+    "start_date": "2014-01",
+    "end_date": "2019-12",
+    "description": {
+      "es": "Comprehensive technical training in professional and personal IT, with a solid foundation in hardware, software, and networks. Programming in structured and object-oriented languages, along with database fundamentals. Practical experience in equipment maintenance, operating system installation, and user technical support.",
+      "en": "Comprehensive technical training in professional and personal IT, with a solid foundation in hardware, software, and networks. Programming in structured and object-oriented languages, along with database fundamentals. Practical experience in equipment maintenance, operating system installation, and user technical support."
     }
   }
 ]

@@ -1,32 +1,32 @@
 [
   {
     "id": "exp-1",
-    "organization": "Acme Corp",
-    "logo_url": "/img/companies/acme.svg",
+    "organization": "Arbusta",
+    "logo_url": "/img/companies/arbusta.svg",
     "role": {
-      "es": "[PLACEHOLDER] Analista de Datos Senior",
-      "en": "[PLACEHOLDER] Senior Data Analyst"
+      "es": "Data Analyst",
+      "en": "Data Analyst"
     },
-    "start_date": "2023-03",
+    "start_date": "2023-05",
     "end_date": null,
     "description": {
-      "es": "[PLACEHOLDER] Liderazgo de proyectos de analítica, dashboards ejecutivos y modelos de reporting.",
-      "en": "[PLACEHOLDER] Led analytics projects, executive dashboards, and reporting models."
+      "es": "I perform data cleaning, labeling, and preparation tasks on datasets, ensuring high-quality information for subsequent analysis. I manage chargebacks through detailed analysis, case tracking, and effective resolution, contributing to fraud prevention and the minimization of financial losses. Design and develop interactive reports and dashboards in Looker Studio, transforming complex data into clear and actionable visualizations. Read, interpret, and monitor operational processes and workflows, identifying improvements and ensuring compliance with standards. Present insights and analytical results in meetings with clients, supporting data-driven decision-making. I manage technical documentation for internal processes, improving efficiency and knowledge sharing within the team.",
+      "en": "I perform data cleaning, labeling, and preparation tasks on datasets, ensuring high-quality information for subsequent analysis. I manage chargebacks through detailed analysis, case tracking, and effective resolution, contributing to fraud prevention and the minimization of financial losses. Design and develop interactive reports and dashboards in Looker Studio, transforming complex data into clear and actionable visualizations. Read, interpret, and monitor operational processes and workflows, identifying improvements and ensuring compliance with standards. Present insights and analytical results in meetings with clients, supporting data-driven decision-making. I manage technical documentation for internal processes, improving efficiency and knowledge sharing within the team."
     }
   },
   {
     "id": "exp-2",
-    "organization": "Globex",
-    "logo_url": "/img/companies/globex.svg",
+    "organization": "Tecso",
+    "logo_url": "/img/companies/tecso.svg",
     "role": {
-      "es": "[PLACEHOLDER] Analista de Datos",
-      "en": "[PLACEHOLDER] Data Analyst"
+      "es": "Intern",
+      "en": "Intern"
     },
-    "start_date": "2021-01",
-    "end_date": "2023-02",
+    "start_date": "2019-09",
+    "end_date": "2019-12",
     "description": {
-      "es": "[PLACEHOLDER] Construcción de pipelines ETL, análisis exploratorio y automatización de reportes.",
-      "en": "[PLACEHOLDER] Built ETL pipelines, exploratory analysis, and report automation."
+      "es": "Designed and implemented data transformation and manipulation features in backend applications using Java. Developed robust validations using regular expressions, ensuring the accuracy and consistency of data. Participated in backend development tasks, gaining hands-on experience in real-world Java programming environments.",
+      "en": "Designed and implemented data transformation and manipulation features in backend applications using Java. Developed robust validations using regular expressions, ensuring the accuracy and consistency of data. Participated in backend development tasks, gaining hands-on experience in real-world Java programming environments."
     }
   }
 ]

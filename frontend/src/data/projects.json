@@ -2,49 +2,17 @@
   {
     "id": "proj-1",
     "title": {
-      "es": "[PLACEHOLDER] Análisis de ventas retail",
-      "en": "[PLACEHOLDER] Retail sales analysis"
+      "es": "ApexLogic Retail Warehouse",
+      "en": "ApexLogic Retail Warehouse"
     },
     "description": {
-      "es": "[PLACEHOLDER] Pipeline ETL sobre datos de ventas, dashboard ejecutivo y segmentación de clientes.",
-      "en": "[PLACEHOLDER] ETL pipeline over sales data, exec dashboard, and customer segmentation."
+      "es": "Translation in progress..",
+      "en": "Translation in progress.."
     },
-    "image_url": "/img/projects/placeholder.svg",
-    "technologies": ["Python", "SQL", "Power BI"],
-    "tags": ["data-analysis", "etl"],
-    "github_url": "https://github.com/emalro/[PLACEHOLDER]-retail",
-    "created_at": "2025-03-10"
-  },
-  {
-    "id": "proj-2",
-    "title": {
-      "es": "[PLACEHOLDER] Predicción de churn",
-      "en": "[PLACEHOLDER] Churn prediction"
-    },
-    "description": {
-      "es": "[PLACEHOLDER] Modelo de clasificación para identificar clientes con riesgo de abandono y panel de seguimiento.",
-      "en": "[PLACEHOLDER] Classification model to flag at-risk customers with monitoring dashboard."
-    },
-    "image_url": "/img/projects/sample-2.svg",
-    "technologies": ["Python", "scikit-learn", "Streamlit"],
-    "tags": ["machine-learning", "classification"],
-    "github_url": "https://github.com/emalro/[PLACEHOLDER]-churn",
-    "demo_url": "https://[PLACEHOLDER].streamlit.app/",
-    "created_at": "2024-11-22"
-  },
-  {
-    "id": "proj-3",
-    "title": {
-      "es": "[PLACEHOLDER] Reportería financiera",
-      "en": "[PLACEHOLDER] Financial reporting"
-    },
-    "description": {
-      "es": "[PLACEHOLDER] Cubos OLAP y reportes automatizados en Power BI para el equipo de finanzas.",
-      "en": "[PLACEHOLDER] OLAP cubes and automated Power BI reports for the finance team."
-    },
-    "image_url": "/img/projects/sample-3.svg",
-    "technologies": ["SQL", "Power BI", "DAX"],
-    "tags": ["reporting", "finance"],
-    "created_at": "2024-06-18"
+    "image_url": "/img/projects/apexlogic-retail-warehouse.svg",
+    "technologies": ["Excel", "PowerBI", "DAX", "Power M", "Data Cleansing"],
+    "tags": ["excel", "powerbi", "dax", "power-m", "data-cleansing"],
+    "demo_url": "https://emalro.com.ar/projects/retail-warehouse-analysis",
+    "created_at": "2026-06-01"
   }
 ]

@@ -31,7 +31,7 @@
         "pattern": "^\\d{4}-\\d{2}$"
       },
       "end_date": {
-        "type": "string",
+        "type": ["string", "null"],
         "pattern": "^\\d{4}-\\d{2}$"
       },
       "description": {

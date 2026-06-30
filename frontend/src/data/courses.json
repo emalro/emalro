@@ -1,45 +1,46 @@
 [
   {
     "id": "course-1",
-    "platform": "Coursera",
-    "platform_logo_url": "/img/platforms/placeholder.svg",
+    "platform": "EF Education First",
+    "platform_logo_url": "/img/platforms/efset.png",
     "name": {
-      "es": "[PLACEHOLDER] Google Data Analytics Certificate",
-      "en": "[PLACEHOLDER] Google Data Analytics Certificate"
+      "es": "EF SET English Certificate 64/100 (C1 Advanced)",
+      "en": "EF SET English Certificate 64/100 (C1 Advanced)"
     },
-    "verification_url": "https://www.coursera.org/[PLACEHOLDER]",
-    "created_at": "2024-08-12"
+    "verification_url": "https://cert.efset.org/en/wZzXS9",
+    "created_at": "2024-11-01"
   },
   {
     "id": "course-2",
-    "platform": "Udemy",
-    "platform_logo_url": "/img/platforms/sample-2.svg",
+    "platform": "Coderhouse",
+    "platform_logo_url": "/img/platforms/coderhouse.svg",
     "name": {
-      "es": "[PLACEHOLDER] SQL para análisis de datos",
-      "en": "[PLACEHOLDER] SQL for data analysis"
+      "es": "Data Analytics",
+      "en": "Data Analytics"
     },
-    "verification_url": "https://www.udemy.com/certificate/[PLACEHOLDER]/",
-    "created_at": "2024-02-05"
+    "verification_url": "https://pub.coderhouse.com/legacy-certificates/672c1ef0908816ff0ffc8f79?lang=es",
+    "created_at": "2024-07-01"
   },
   {
     "id": "course-3",
-    "platform": "LinkedIn Learning",
-    "platform_logo_url": "/img/platforms/sample-3.svg",
+    "platform": "Coderhouse",
+    "platform_logo_url": "/img/platforms/coderhouse.svg",
     "name": {
-      "es": "[PLACEHOLDER] Power BI esencial",
-      "en": "[PLACEHOLDER] Power BI essentials"
+      "es": "Tableau",
+      "en": "Tableau"
     },
-    "verification_url": "https://www.linkedin.com/learning/certificates/[PLACEHOLDER]",
-    "created_at": "2023-10-21"
+    "verification_url": "https://pub.coderhouse.com/legacy-certificates/66b28cf77533ac926b5a4d23?lang=es",
+    "created_at": "2024-07-01"
   },
   {
     "id": "course-4",
-    "platform": "DataCamp",
-    "platform_logo_url": "/img/platforms/sample-3.svg",
+    "platform": "Coderhouse",
+    "platform_logo_url": "/img/platforms/coderhouse.svg",
     "name": {
-      "es": "[PLACEHOLDER] Python para ciencia de datos",
-      "en": "[PLACEHOLDER] Python for data science"
+      "es": "Excel",
+      "en": "Excel"
     },
-    "created_at": "2023-05-09"
+    "verification_url": "https://pub.coderhouse.com/legacy-certificates/6660b388bbd9a25e7c4bf651?lang=es",
+    "created_at": "2024-05-01"
   }
 ]

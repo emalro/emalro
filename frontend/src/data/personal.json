@@ -1,27 +1,35 @@
 {
   "name": {
-    "es": "Emanuel Romero",
-    "en": "Emanuel Romero"
+    "es": "Emanuel A. Romero",
+    "en": "Emanuel A. Romero"
   },
   "role": {
-    "es": "[PLACEHOLDER] Rol profesional",
-    "en": "[PLACEHOLDER] Professional role"
+    "es": "Functional Analyst | Data Analyst",
+    "en": "Functional Analyst | Data Analyst"
   },
   "summary": {
-    "es": "[PLACEHOLDER] Resumen profesional de dos o tres oraciones en español.",
-    "en": "[PLACEHOLDER] Professional summary in two or three sentences."
+    "es": "Hello there! I'm Emanuel Romero, a student aspiring to become a Systems Engineer, and I currently work as a Data Analyst @ Arbusta. I'm passionate about the world of data and how it can tell stories, solve problems, and make a real impact on businesses. With experience in data analysis, visualization, and insight extraction, I'm constantly looking for new ways to optimize processes and support evidence-based decision-making. I am currently building my professional portfolio, where I share my career journey, projects, and lessons learned in the fields of data analysis, functional analysis, and the IT world in general. If you're looking for someone who is analytical, proactive, and eager to grow, I'm open to new opportunities and collaborations!",
+    "en": "Hello there! I'm Emanuel Romero, a student aspiring to become a Systems Engineer, and I currently work as a Data Analyst @ Arbusta. I'm passionate about the world of data and how it can tell stories, solve problems, and make a real impact on businesses. With experience in data analysis, visualization, and insight extraction, I'm constantly looking for new ways to optimize processes and support evidence-based decision-making. I am currently building my professional portfolio, where I share my career journey, projects, and lessons learned in the fields of data analysis, functional analysis, and the IT world in general. If you're looking for someone who is analytical, proactive, and eager to grow, I'm open to new opportunities and collaborations!"
   },
   "avatar_url": "/img/avatar.svg",
   "hardSkills": [
-    { "es": "SQL", "en": "SQL" },
     { "es": "Python", "en": "Python" },
+    { "es": "SQL", "en": "SQL" },
+    { "es": "Google Workspace", "en": "Google Workspace" },
+    { "es": "Microsoft Office", "en": "Microsoft Office" },
     { "es": "Power BI", "en": "Power BI" },
-    { "es": "Pandas", "en": "Pandas" },
-    { "es": "ETL", "en": "ETL" }
+    { "es": "Power M", "en": "Power M" },
+    { "es": "Git", "en": "Git" }
   ],
   "softSkills": [
-    { "es": "Comunicación", "en": "Communication" },
-    { "es": "Trabajo en equipo", "en": "Teamwork" },
-    { "es": "Resolución de problemas", "en": "Problem solving" }
+    { "es": "Effective communication", "en": "Effective communication" },
+    { "es": "Teamwork", "en": "Teamwork" },
+    { "es": "Attention to detail", "en": "Attention to detail" },
+    { "es": "Analytical thinking", "en": "Analytical thinking" },
+    { "es": "Problem-solving", "en": "Problem-solving" },
+    { "es": "Continuous learning", "en": "Continuous learning" },
+    { "es": "Adaptability", "en": "Adaptability" },
+    { "es": "Organization and planning", "en": "Organization and planning" },
+    { "es": "Results-oriented", "en": "Results-oriented" }
   ]
 }
