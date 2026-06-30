@@ -27,6 +27,7 @@ os.environ.setdefault(
 os.environ.setdefault("ENV", "test")
 # High rate limit so tests don't trip slowapi's window.
 os.environ.setdefault("LOGIN_RATE_LIMIT", "1000/minute")
+os.environ.setdefault("CONTACT_RATE_LIMIT", "1000/hour")
 
 import asyncio
 import pytest
