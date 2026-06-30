@@ -4,6 +4,12 @@ import SortControl from "../ui/SortControl.astro";
 
 // Numeric compact form: "2024-08-12" → 20240812, used by sort.ts.
 const sortKey = (iso: string): string => iso.replaceAll("-", "");
+
+const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const fmt = (iso: string): string => {
+  const [y, m] = iso.split("-");
+  return `${months[Number(m) - 1]} ${y}`;
+};
 ---
 
 <section id="courses" class="grid gap-8 py-16 md:py-24">
@@ -14,22 +20,34 @@ const sortKey = (iso: string): string => iso.replaceAll("-", "");
     </div>
     <SortControl target="courses-list" defaultDir="desc" />
   </div>
-  <ol id="courses-list" data-sort-root data-sort-dir="desc" class="grid gap-3">
+  <ol id="courses-list" data-sort-root data-sort-dir="desc" class="grid gap-4">
     {courses.map((c) => (
-      <li class="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-lg border border-border bg-bg-surface p-4 transition-colors hover:border-accent md:p-5" data-sort-value={sortKey(c.created_at)}>
-        <img src={c.platform_logo_url} alt={c.platform} width="48" height="48" loading="lazy" class="h-12 w-12 rounded-md border border-border bg-bg-elevated object-contain p-1" />
-        <div class="grid gap-1">
-          <p class="font-mono text-[11px] uppercase tracking-widest text-ink-tertiary">{c.platform}</p>
-          <h3 class="font-mono text-sm font-semibold text-ink-primary md:text-base" data-i18n={JSON.stringify(c.name)}>{c.name.es}</h3>
+      <li class="grid gap-4 rounded-lg border border-border bg-bg-surface p-5 md:grid-cols-[auto_1fr_auto] md:items-start" data-sort-value={sortKey(c.created_at)}>
+        <img src={c.platform_logo_url} alt={c.platform} width="40" height="40" loading="lazy" class="mt-1 h-10 w-10 rounded-md border border-border bg-bg-elevated object-contain p-1" />
+        <div class="grid gap-1.5">
+          <h3 class="font-mono text-xl font-semibold text-ink-primary md:text-2xl" data-i18n={JSON.stringify(c.name)}>{c.name.es}</h3>
+          <p class="flex items-center gap-2 text-sm text-ink-secondary">
+            <span class="font-mono">{c.platform}</span>
+            {c.verification_url && (
+              <a
+                href={c.verification_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex h-5 w-5 items-center justify-center text-ink-tertiary transition-colors hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-surface"
+                aria-label={`${c.name.es} verification`}
+                title="Verify certificate"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M15 3h6v6"/>
+                  <path d="M10 14 21 3"/>
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                </svg>
+              </a>
+            )}
+          </p>
         </div>
-        <div class="flex items-center">
-          {c.verification_url ? (
-            <a href={c.verification_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="Verify certificate">
-              <span class="font-mono text-xs text-accent">Verify</span>
-            </a>
-          ) : (
-            <span class="font-mono text-[11px] text-ink-tertiary" aria-label="No verification link">—</span>
-          )}
+        <div class="md:pt-2">
+          <time class="font-mono text-xs text-ink-tertiary" datetime={c.created_at}>{fmt(c.created_at)}</time>
         </div>
       </li>
     ))}

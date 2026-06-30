@@ -20,10 +20,10 @@ const fmt = (ym: string): string => {
   </div>
   <ol id="experience-list" data-sort-root data-sort-dir="desc" class="grid gap-4">
     {experience.map((entry) => (
-      <li class="grid gap-4 rounded-lg border border-border bg-bg-surface p-5 md:grid-cols-[auto_1fr_auto] md:items-center" data-sort-value={entry.start_date}>
-        <img src={entry.logo_url} alt={entry.organization} width="48" height="48" loading="lazy" class="h-12 w-12 rounded-md border border-border bg-bg-elevated object-contain p-1" />
-        <div class="grid gap-1">
-          <h3 class="font-mono text-base font-semibold text-ink-primary md:text-lg" data-i18n={JSON.stringify(entry.role)}>{entry.role.es}</h3>
+      <li class="grid gap-4 rounded-lg border border-border bg-bg-surface p-5 md:grid-cols-[auto_1fr_auto] md:items-start" data-sort-value={entry.start_date}>
+        <img src={entry.logo_url} alt={entry.organization} width="40" height="40" loading="lazy" class="mt-1 h-10 w-10 rounded-md border border-border bg-bg-elevated object-contain p-1" />
+        <div class="grid gap-1.5">
+          <h3 class="font-mono text-xl font-semibold text-ink-primary md:text-2xl" data-i18n={JSON.stringify(entry.role)}>{entry.role.es}</h3>
           <p class="flex items-center gap-2 text-sm text-ink-secondary">
             <span class="font-mono">{entry.organization}</span>
             {entry.website && (
@@ -50,14 +50,14 @@ const fmt = (ym: string): string => {
             set:html={renderMarkdown(entry.description.es)}
           />
         </div>
-        <div class="flex flex-col items-start gap-1 md:items-end">
-          <time class="font-mono text-xs text-ink-tertiary" datetime={entry.start_date}>{fmt(entry.start_date)}</time>
-          <span class="font-mono text-xs text-ink-tertiary">—</span>
-          {entry.end_date === null ? (
-            <span class="rounded-md border border-accent bg-accent-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-accent" data-i18n={JSON.stringify({ es: "Presente", en: "Present" })}>Presente</span>
-          ) : (
-            <time class="font-mono text-xs text-ink-tertiary" datetime={entry.end_date}>{fmt(entry.end_date)}</time>
-          )}
+        <div class="md:pt-2">
+          <time class="font-mono text-xs text-ink-tertiary" datetime={entry.start_date}>
+            {fmt(entry.start_date)} — {entry.end_date === null ? (
+              <span data-i18n={JSON.stringify({ es: "Presente", en: "Present" })}>Presente</span>
+            ) : (
+              <time datetime={entry.end_date}>{fmt(entry.end_date)}</time>
+            )}
+          </time>
         </div>
       </li>
     ))}
@@ -73,7 +73,7 @@ const fmt = (ym: string): string => {
     list-style: disc;
   }
   .description-md :global(li) {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
   }
   .description-md :global(strong) {
     color: var(--color-ink-primary, #fff);
