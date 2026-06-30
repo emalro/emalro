@@ -1,0 +1,25 @@
+# Local Postgres 16 for the emalro backend.
+# Run from the repo root: `docker compose up -d`
+# Stop with: `docker compose down` (add `-v` to drop the volume)
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: emalro-postgres
+    environment:
+      POSTGRES_USER: emalro
+      POSTGRES_PASSWORD: emalro
+      POSTGRES_DB: emalro
+    ports:
+      - "5432:5432"
+    volumes:
+      - emalro-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U emalro -d emalro"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  emalro-postgres-data:
+    name: emalro-postgres-data

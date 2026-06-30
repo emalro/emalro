@@ -25,3 +25,22 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Python / backend
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+*.db
+backend/dist/
+backend/build/
