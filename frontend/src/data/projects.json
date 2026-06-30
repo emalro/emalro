@@ -6,8 +6,8 @@
       "en": "ApexLogic Retail Warehouse"
     },
     "description": {
-      "es": "Translation in progress..",
-      "en": "Translation in progress.."
+      "es": "*Translation in progress..*",
+      "en": "*Translation in progress..*"
     },
     "image_url": "/img/projects/apexlogic-retail-warehouse.svg",
     "technologies": ["Excel", "PowerBI", "DAX", "Power M", "Data Cleansing"],
