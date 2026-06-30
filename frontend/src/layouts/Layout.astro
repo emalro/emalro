@@ -12,6 +12,17 @@ const {
   title = "Emanuel Romero — Portfolio",
   description = "Data Analyst portfolio. Experience, education, projects, and courses.",
 } = Astro.props;
+
+// The cold-start ping hits `/api/v1/health` on the backend. We
+// strip the optional `/api/v1` suffix from `PUBLIC_API_URL` so the
+// final URL is always `${base}/api/v1/health` regardless of whether
+// the operator set `PUBLIC_API_URL=http://localhost:8000` (canonical)
+// or `PUBLIC_API_URL=http://localhost:8000/api/v1` (local-dev
+// convenience). Same normalization as `src/lib/api.ts`.
+const rawApiUrl = (import.meta.env.PUBLIC_API_URL as string | undefined) ?? "";
+const apiBase = rawApiUrl
+  .replace(/\/+$/, "")
+  .replace(/\/api\/v1$/, "");
 ---
 
 <!doctype html>
@@ -59,6 +70,33 @@ const {
       import "../scripts/sort.ts";
       import "../scripts/lenis.ts";
       import "../scripts/typed-role.ts";
+    </script>
+    {/*
+      Cold-start ping (per `cold-start-ping` REQ-02..05). Inline
+      script (no `client:` directive, no JS bundle) that fires a
+      keepalive GET to /api/v1/health on first paint. The `keepalive`
+      flag survives tab close; the 64 KB cap is irrelevant (the
+      health response is ~30 bytes). Fire-and-forget: no retries, no
+      UI, no await. URL parse failure on empty PUBLIC_API_URL is
+      silently swallowed.
+
+      The Astro `define:vars` directive is the canonical way to
+      inject a build-time value into an `is:inline` script (Astro
+      does NOT process `import.meta.env` inside raw inline scripts).
+    */}
+    <script is:inline define:vars={{ apiBase }}>
+      (function () {
+        try {
+          var url = (apiBase || "") + "/api/v1/health";
+          if (typeof fetch === "function") {
+            fetch(url, { keepalive: true, method: "GET" }).catch(
+              function () {},
+            );
+          }
+        } catch (_) {
+          /* cold-start ping is best-effort; never block paint */
+        }
+      })();
     </script>
   </body>
 </html>
