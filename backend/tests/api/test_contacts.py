@@ -145,8 +145,9 @@ def test_post_contacts_honeypot_whitespace_only_returns_400(client, db_session):
     The previous `payload.website and payload.website.strip()` check
     short-circuited on a truthy non-None string, so `"   "` (truthy
     but strips to empty) was treated as a real user and got persisted.
-    The fix uses `is not None and .strip()` so whitespace is correctly
-    rejected.
+    The fix uses `is not None and != ""` (a direct empty-string
+    compare, not a truthy-and-strip chain), so whitespace is
+    correctly rejected.
     """
     from sqlmodel import select
 
@@ -268,11 +269,13 @@ def test_post_contacts_transient_db_error_retries_and_succeeds(
     assert body["error"] is None
     assert "id" in body["data"]
 
-    # The flaky session's `commit` must have been called at least
-    # twice (one failure + one success).
+    # The flaky session's `commit` must have been called exactly
+    # twice (one failure + one success). A future bug that adds a
+    # third (or infinite) commit would not be caught by a `>= 2`
+    # assertion; the production code's contract is one retry max.
     wrapper = flaky_session_dep["wrapper"]
     assert wrapper is not None
-    assert wrapper.commit_count >= 2
+    assert wrapper.commit_count == 2
 
     # And the row must really be in the DB (proving the retry's
     # second commit actually persisted).
