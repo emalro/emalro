@@ -1,0 +1,105 @@
+{
+  "$id": "contact.schema.json",
+  "type": "object",
+  "required": [
+    "page",
+    "fields",
+    "errors",
+    "state"
+  ],
+  "properties": {
+    "page": {
+      "type": "object",
+      "required": ["eyebrow", "heading", "intro", "backLink"],
+      "properties": {
+        "eyebrow": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "heading": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "intro": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "backLink": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        }
+      },
+      "additionalProperties": false
+    },
+    "fields": {
+      "type": "object",
+      "required": ["name", "email", "subject", "message", "submit"],
+      "properties": {
+        "name": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "email": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "subject": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "message": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "submit": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        }
+      },
+      "additionalProperties": false
+    },
+    "errors": {
+      "type": "object",
+      "required": [
+        "required",
+        "emailInvalid",
+        "messageTooShort",
+        "messageTooLong",
+        "subjectTooLong",
+        "nameTooLong"
+      ],
+      "properties": {
+        "required": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "emailInvalid": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "messageTooShort": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "messageTooLong": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "subjectTooLong": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "nameTooLong": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        }
+      },
+      "additionalProperties": false
+    },
+    "state": {
+      "type": "object",
+      "required": ["success", "error", "rateLimited", "networkError"],
+      "properties": {
+        "success": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "error": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "rateLimited": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        },
+        "networkError": {
+          "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
