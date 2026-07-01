@@ -44,11 +44,20 @@ const sortKey = (iso: string): string => iso.replaceAll("-", "");
                     <span class="font-mono text-xs">Repo</span>
                   </a>
                 )}
-                {p.demo_url && (
-                  <a href={p.demo_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="Live demo">
-                    <span class="font-mono text-xs text-accent">Demo</span>
-                  </a>
-                )}
+                {p.demo_url && (() => {
+                  // Show the demo host (e.g. "emalro.com.ar") instead of
+                  // a generic "Demo" label so the button tells the user
+                  // where it actually goes. `URL` throws on malformed
+                  // input; the schema + validate:i18n catch that at
+                  // build time, so a plain call is safe here.
+                  let demoHost = p.demo_url;
+                  try { demoHost = new URL(p.demo_url).host; } catch {}
+                  return (
+                    <a href={p.demo_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="Live demo">
+                      <span class="font-mono text-xs text-accent">{demoHost}</span>
+                    </a>
+                  );
+                })()}
               </>
             )}
           </div>
