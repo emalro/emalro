@@ -21,6 +21,13 @@
       "minLength": 1,
       "maxLength": 120
     },
+    "cover_image_url": {
+      "type": ["string", "null"],
+      "maxLength": 500
+    },
+    "is_visible": {
+      "type": "boolean"
+    },
     "published_at": {
       "type": "string",
       "format": "date-time"
