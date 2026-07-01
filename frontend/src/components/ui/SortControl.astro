@@ -41,10 +41,17 @@ const ARIA_LABELS = {
 >
   <Fragment set:html={Chevron} />
 </button>
-<style>
+<style is:global>
   /* Rotate the chevron 180° when the sort direction is asc so the
    * same SVG covers both states. The transition is short so the
-   * visual feedback feels like a toggle, not a slow spin. */
+   * visual feedback feels like a toggle, not a slow spin.
+   *
+   * `is:global` because the chevron SVG is rendered via
+   * `<Fragment set:html={...} />`, which doesn't receive the
+   * scoped `data-astro-cid-*` attribute that Astro adds to inline
+   * template elements. Without `is:global` the scoped selector
+   * would never match the SVG and the rotation would silently
+   * fail. */
   [data-sort-toggle] svg {
     transition: transform 0.2s ease;
     transform: rotate(0deg);
