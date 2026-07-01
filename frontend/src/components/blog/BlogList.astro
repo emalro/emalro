@@ -1,0 +1,55 @@
+---
+/**
+ * Blog list wrapper (per `blog-section` REQ-blog-section-01).
+ *
+ * Renders a chronological grid of `BlogCard` items. The active
+ * language is read from `<html data-lang>` so the i18n resolver
+ * could in principle re-render on language change, but since this
+ * is a static build we just resolve at build time using the
+ * `lang` prop (default `es`, matching the document default).
+ */
+import type { BlogPostSummary } from "../../lib/api";
+import BlogCard from "./BlogCard.astro";
+
+interface Props {
+  posts: BlogPostSummary[];
+  lang?: "es" | "en";
+  /** Optional heading text (already i18n-resolved). */
+  heading?: string;
+  /** Optional eyebrow (the "// 04" label, already i18n-resolved). */
+  eyebrow?: string;
+  /** When true, limit to the first N items (used by the homepage teaser). */
+  limit?: number;
+}
+
+const { posts, lang = "es", heading, eyebrow, limit } = Astro.props;
+const items = typeof limit === "number" ? posts.slice(0, limit) : posts;
+---
+
+<section id="blog" class="grid gap-8 py-16 md:py-24">
+  {(heading || eyebrow) && (
+    <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div>
+        {eyebrow && (
+          <p class="font-mono text-xs uppercase tracking-widest text-accent">{eyebrow}</p>
+        )}
+        {heading && (
+          <h2 class="mt-2 font-mono text-2xl font-bold md:text-3xl">{heading}</h2>
+        )}
+      </div>
+    </div>
+  )}
+  {items.length === 0 ? (
+    <p class="text-sm text-ink-tertiary">
+      {lang === "en"
+        ? "No posts published yet. Check back soon."
+        : "Aún no hay posts publicados. Vuelve pronto."}
+    </p>
+  ) : (
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((post) => (
+        <BlogCard post={post} lang={lang} />
+      ))}
+    </div>
+  )}
+</section>
