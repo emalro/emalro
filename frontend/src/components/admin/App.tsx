@@ -14,9 +14,7 @@
  * dashboard, CRUD) is purely client-side.
  *
  * Data layer: TanStack Query, via the shared `adminQueryClient`
- * (see `src/lib/admin-query.ts`). The provider lives inside
- * `<App>` so the QueryClient runtime is only loaded for the
- * admin bundle — the public site never imports it.
+ * (see `src/lib/admin-query.ts`).
  *
  * Auth: `<AuthProvider>` wraps the SPA and exposes
  * `useAuth()`. The route guard below enforces the redirect
@@ -28,22 +26,78 @@
  */
 import { Route, Switch, Link, useLocation } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useEffect } from "preact/hooks";
+import { useEffect, type ComponentChildren } from "preact/hooks";
 
 import { adminQueryClient } from "../../lib/admin-query";
 import { AuthProvider, useAuth } from "./AuthContext";
 import LoginForm from "./LoginForm";
+import AdminLayout from "./AdminLayout";
+import Dashboard from "./Dashboard";
 
-/**
- * Splash while the auth state is being resolved on first load.
- * Prevents a "flash of login form" for users who already have
- * a valid session.
- */
+/** Splash while the auth state is being resolved on first load. */
 function Splash() {
   return (
     <section class="mx-auto flex min-h-[70vh] max-w-md items-center px-6">
       <p class="w-full text-center text-sm text-ink-tertiary">Cargando…</p>
     </section>
+  );
+}
+
+/** Placeholder for the CRUD pages that ship with PR #6. */
+function ComingSoon({ feature }: { feature: string }) {
+  return (
+    <section class="mx-auto max-w-3xl px-6 py-16">
+      <h1 class="font-mono text-2xl text-ink-primary">{feature}</h1>
+      <p class="mt-3 text-sm text-ink-secondary">
+        Próximamente: gestión de {feature.toLowerCase()}.
+      </p>
+      <p class="mt-6 text-xs text-ink-tertiary">
+        <Link href="/admin/dashboard">← Volver al panel</Link>
+      </p>
+    </section>
+  );
+}
+
+function NotFound() {
+  return (
+    <AdminLayout>
+      <section class="mx-auto max-w-md px-6 py-16">
+        <h1 class="font-mono text-2xl text-ink-primary">404</h1>
+        <p class="mt-3 text-sm text-ink-secondary">
+          Esa ruta no existe dentro del panel.
+        </p>
+        <p class="mt-6 text-xs text-ink-tertiary">
+          <Link href="/admin/dashboard">Volver al panel</Link>
+        </p>
+      </section>
+    </AdminLayout>
+  );
+}
+
+/**
+ * Authenticated routes, wrapped in <AdminLayout>.
+ * The dashboard is the first route; the CRUD UIs are
+ * placeholders until PR #6.
+ */
+function AuthenticatedRoutes() {
+  return (
+    <AdminLayout>
+      <Switch>
+        <Route path="/admin/dashboard" component={Dashboard} />
+        <Route path="/admin/projects">
+          <ComingSoon feature="Proyectos" />
+        </Route>
+        <Route path="/admin/blog">
+          <ComingSoon feature="Blog" />
+        </Route>
+        <Route path="/admin/contacts">
+          <ComingSoon feature="Contactos" />
+        </Route>
+        <Route path="/admin/resume">
+          <ComingSoon feature="Currículum" />
+        </Route>
+      </Switch>
+    </AdminLayout>
   );
 }
 
@@ -55,19 +109,14 @@ function GuardedRoutes() {
   const { status } = useAuth();
   const [location, navigate] = useLocation();
 
-  // /admin = login route. /admin/<x> = authenticated routes.
   const isLoginRoute =
-    location === "/admin" || location === "/admin/" || location === "/admin/";
+    location === "/admin" || location === "/admin/";
 
   useEffect(() => {
     if (status === "loading") return;
     if (status === "unauthenticated" && !isLoginRoute) {
-      // Unauthenticated visitor trying to access a protected
-      // page → bounce to login.
       navigate("/admin", { replace: true });
     } else if (status === "authenticated" && isLoginRoute) {
-      // Logged-in visitor at the login page → land on the
-      // dashboard.
       navigate("/admin/dashboard", { replace: true });
     }
   }, [status, isLoginRoute, navigate]);
@@ -76,42 +125,18 @@ function GuardedRoutes() {
     return <Splash />;
   }
 
-  return (
-    <Switch>
-      <Route path="/admin" component={LoginForm} />
-      <Route path="/admin/dashboard" component={DashboardPlaceholder} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
+  if (status === "unauthenticated") {
+    // Only the login route is reachable for unauthenticated
+    // visitors; the guard above already redirected any other
+    // path.
+    return (
+      <Switch>
+        <Route path="/admin" component={LoginForm} />
+      </Switch>
+    );
+  }
 
-/** Placeholder dashboard. Replaced by the real Dashboard in commit 8. */
-function DashboardPlaceholder() {
-  return (
-    <section class="mx-auto max-w-3xl px-6 py-12">
-      <h1 class="font-mono text-2xl text-ink-primary">Dashboard</h1>
-      <p class="mt-3 text-sm text-ink-secondary">
-        El dashboard con conteos llega en el commit 8.
-      </p>
-      <p class="mt-6 text-xs text-ink-tertiary">
-        <Link href="/admin">← Volver al inicio de admin</Link>
-      </p>
-    </section>
-  );
-}
-
-function NotFound() {
-  return (
-    <section class="mx-auto max-w-md px-6 py-16">
-      <h1 class="font-mono text-2xl text-ink-primary">404</h1>
-      <p class="mt-3 text-sm text-ink-secondary">
-        Esa ruta no existe dentro del panel.
-      </p>
-      <p class="mt-6 text-xs text-ink-tertiary">
-        <Link href="/admin">Volver al inicio de admin</Link>
-      </p>
-    </section>
-  );
+  return <AuthenticatedRoutes />;
 }
 
 export default function App() {
