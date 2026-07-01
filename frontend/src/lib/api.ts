@@ -222,7 +222,6 @@ async function request<T>(
       signal: controller.signal,
     });
   } catch (err) {
-    clearTimeout(timer);
     if (err instanceof DOMException && err.name === "AbortError") {
       throw new ApiError(
         "network_error",
@@ -240,6 +239,9 @@ async function request<T>(
       requestId,
     );
   } finally {
+    // Sole owner of the timer cleanup. Runs on success, on
+    // AbortError, on TypeError, and on any other throw — the
+    // catch block does NOT need its own `clearTimeout`.
     clearTimeout(timer);
   }
 
