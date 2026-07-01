@@ -50,7 +50,7 @@ const FILE_TO_SCHEMA = {
  * part of the i18n-shape contract and must be exercised at every
  * build per `i18n-shape` REQ-i18n-shape-06.
  */
-const STANDALONE_SCHEMAS = ["blog.schema.json"];
+const STANDALONE_SCHEMAS = ["blog.schema.json", "contact.schema.json"];
 
 /**
  * Canonical samples for the standalone schemas. Each sample is a
@@ -68,6 +68,52 @@ const STANDALONE_SAMPLES = {
     tags: ["data", "python"],
     slug: "hello-world",
     published_at: "2026-06-30T10:00:00Z",
+  },
+  // Mirrors the `ContactLabels` shape in
+  // `frontend/src/components/contact/i18n.ts`. The schema proves
+  // every label is a LocalizedStr so adding a new label without
+  // the JSONB shape fails the build (per `i18n-shape`
+  // REQ-i18n-shape-05).
+  "contact.schema.json": {
+    page: {
+      eyebrow: { es: "// 05", en: "// 05" },
+      heading: { es: "Contacto", en: "Contact" },
+      intro: {
+        es: "Dejame tu mensaje.",
+        en: "Drop me a message.",
+      },
+      backLink: { es: "← Volver", en: "← Back" },
+    },
+    fields: {
+      name: { es: "Nombre", en: "Name" },
+      email: { es: "Email", en: "Email" },
+      subject: { es: "Asunto", en: "Subject" },
+      message: { es: "Mensaje", en: "Message" },
+      submit: { es: "Enviar", en: "Send" },
+    },
+    errors: {
+      required: { es: "Requerido.", en: "Required." },
+      emailInvalid: { es: "Email inválido.", en: "Invalid email." },
+      messageTooShort: {
+        es: "Mensaje muy corto.",
+        en: "Message too short.",
+      },
+      messageTooLong: {
+        es: "Mensaje muy largo.",
+        en: "Message too long.",
+      },
+      subjectTooLong: {
+        es: "Asunto muy largo.",
+        en: "Subject too long.",
+      },
+      nameTooLong: { es: "Nombre muy largo.", en: "Name too long." },
+    },
+    state: {
+      success: { es: "¡Gracias!", en: "Thanks!" },
+      error: { es: "Error.", en: "Error." },
+      rateLimited: { es: "Demasiados intentos.", en: "Too many attempts." },
+      networkError: { es: "Sin conexión.", en: "No connection." },
+    },
   },
 };
 

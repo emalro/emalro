@@ -2,12 +2,26 @@
 import ThemeToggle from "./ThemeToggle.astro";
 import LanguageSelector from "./LanguageSelector.astro";
 
+/**
+ * Top-level nav links (per `contact-form` REQ-contact-form-01 +
+ * the blog-section PR that added the Blog teaser on the homepage).
+ *
+ * The first five entries are in-page anchors to the homepage
+ * sections; the last two (`blog`, `contact`) are real routes.
+ * `data-anchor-id` is set on every link so the existing
+ * `data-mobile-nav` script can find anchors and dismiss the
+ * mobile menu on click. Routes (non-`#` links) don't carry the
+ * `data-anchor-id` attribute because the smooth-scroll code
+ * only fires on hash-prefixed hrefs (`#xxx` or `/#xxx`).
+ */
 const links = [
-  { id: "hero", label: { es: "Inicio", en: "Home" } },
-  { id: "experience", label: { es: "Experiencia", en: "Experience" } },
-  { id: "education", label: { es: "Educación", en: "Education" } },
-  { id: "projects", label: { es: "Proyectos", en: "Projects" } },
-  { id: "courses", label: { es: "Cursos", en: "Courses" } },
+  { id: "hero", label: { es: "Inicio", en: "Home" }, href: "/#hero" },
+  { id: "experience", label: { es: "Experiencia", en: "Experience" }, href: "/#experience" },
+  { id: "education", label: { es: "Educación", en: "Education" }, href: "/#education" },
+  { id: "projects", label: { es: "Proyectos", en: "Projects" }, href: "/#projects" },
+  { id: "courses", label: { es: "Cursos", en: "Courses" }, href: "/#courses" },
+  { id: "blog", label: { es: "Blog", en: "Blog" }, href: "/blog" },
+  { id: "contact", label: { es: "Contacto", en: "Contact" }, href: "/contact" },
 ] as const;
 ---
 
@@ -24,16 +38,19 @@ const links = [
     </a>
     <nav class="ml-4 hidden flex-1 items-center gap-1 md:flex">
       {
-        links.map((link) => (
-          <a
-            href={`#${link.id}`}
-            class="rounded-md px-3 py-2 text-sm text-ink-secondary hover:bg-bg-surface hover:text-ink-primary"
-            data-i18n={JSON.stringify(link.label)}
-            data-anchor-id={link.id}
-          >
-            {link.label.es}
-          </a>
-        ))
+        links.map((link) => {
+          const isAnchor = link.href.includes("#");
+          return (
+            <a
+              href={link.href}
+              class="rounded-md px-3 py-2 text-sm text-ink-secondary hover:bg-bg-surface hover:text-ink-primary"
+              data-i18n={JSON.stringify(link.label)}
+              data-anchor-id={isAnchor ? link.id : undefined}
+            >
+              {link.label.es}
+            </a>
+          );
+        })
       }
     </nav>
     <div class="ml-auto flex items-center gap-2">
@@ -61,16 +78,19 @@ const links = [
       aria-label="Mobile navigation"
     >
       {
-        links.map((link) => (
-          <a
-            href={`#${link.id}`}
-            class="flex items-center border-l-2 border-transparent py-3 pl-4 font-mono text-sm text-ink-secondary transition-colors hover:border-accent hover:bg-bg-elevated hover:text-ink-primary"
-            data-anchor-id={link.id}
-          >
-            <span class="mr-2 text-accent" aria-hidden="true">&gt;</span>
-            <span data-i18n={JSON.stringify(link.label)}>{link.label.es}</span>
-          </a>
-        ))
+        links.map((link) => {
+          const isAnchor = link.href.includes("#");
+          return (
+            <a
+              href={link.href}
+              class="flex items-center border-l-2 border-transparent py-3 pl-4 font-mono text-sm text-ink-secondary transition-colors hover:border-accent hover:bg-bg-elevated hover:text-ink-primary"
+              data-anchor-id={isAnchor ? link.id : undefined}
+            >
+              <span class="mr-2 text-accent" aria-hidden="true">&gt;</span>
+              <span data-i18n={JSON.stringify(link.label)}>{link.label.es}</span>
+            </a>
+          );
+        })
       }
     </nav>
   </div>
@@ -92,7 +112,7 @@ const links = [
       setOpen(toggle.getAttribute("aria-expanded") !== "true");
     });
     menu
-      .querySelectorAll<HTMLAnchorElement>("a[href^='#']")
+      .querySelectorAll<HTMLAnchorElement>("a[href*='#']")
       .forEach((link) => link.addEventListener("click", () => setOpen(false)));
     document.addEventListener("keydown", (event) => {
       if (

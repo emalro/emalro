@@ -23,8 +23,11 @@ function reducedMotion(): boolean {
 }
 
 function targetFor(href: string): HTMLElement | null {
-  if (!href.startsWith("#") || href.length < 2) return null;
-  return document.querySelector<HTMLElement>(href);
+  // Accept both "#hero" (same-page anchor) and "/#hero" (cross-page
+  // with hash). Extract the hash part and query by it.
+  const hashIdx = href.indexOf("#");
+  if (hashIdx === -1 || href.length < hashIdx + 2) return null;
+  return document.querySelector<HTMLElement>(href.slice(hashIdx));
 }
 
 function init() {
@@ -42,8 +45,10 @@ function init() {
   }
   requestAnimationFrame(raf);
 
-  // Bind anchor clicks that target an in-page section
-  document.querySelectorAll<HTMLAnchorElement>("a[href^='#']").forEach((a) => {
+  // Bind anchor clicks that target an in-page section.
+  // The selector catches both "#hero" and "/#hero" forms so the
+  // navbar works from any route (homepage and /contact, /blog/*).
+  document.querySelectorAll<HTMLAnchorElement>("a[href*='#']").forEach((a) => {
     a.addEventListener("click", (e) => {
       const href = a.getAttribute("href");
       if (!href) return;

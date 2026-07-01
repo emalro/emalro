@@ -117,7 +117,11 @@ def test_post_contacts_honeypot_returns_400(client):
     )
     assert r.status_code == 400
     body = r.json()
-    assert body["error"]["code"] == "honeypot_triggered"
+    # The 400 envelope uses the generic `bad_request` code on purpose:
+    # leaking `honeypot_triggered` would let attackers fingerprint the
+    # defense. The frontend collapses every non-429 4xx into the same
+    # banner so UX is unchanged.
+    assert body["error"]["code"] == "bad_request"
 
 
 def test_post_contacts_honeypot_does_not_persist(client, db_session):
@@ -133,6 +137,209 @@ def test_post_contacts_honeypot_does_not_persist(client, db_session):
         select(ContactMessage).where(ContactMessage.email == "bot@example.com")
     )).scalars().all()
     assert len(rows) == 0
+
+
+def test_post_contacts_honeypot_whitespace_only_returns_400(client, db_session):
+    """R3-C2: a single space must NOT bypass the honeypot.
+
+    The previous `payload.website and payload.website.strip()` check
+    short-circuited on a truthy non-None string, so `"   "` (truthy
+    but strips to empty) was treated as a real user and got persisted.
+    The fix uses `is not None and .strip()` so whitespace is correctly
+    rejected.
+    """
+    from sqlmodel import select
+
+    from app.models.contact import ContactMessage
+
+    r = client.post(
+        "/api/v1/contacts",
+        json=_valid_payload(website="   ", email="ws@example.com"),
+    )
+    assert r.status_code == 400
+    body = r.json()
+    assert body["error"]["code"] == "bad_request"
+
+    rows = asyncio_run(db_session.execute(
+        select(ContactMessage).where(ContactMessage.email == "ws@example.com")
+    )).scalars().all()
+    assert len(rows) == 0
+
+
+def test_post_contacts_honeypot_empty_string_accepted(client):
+    """An empty `website` (the default) is NOT a bot signal."""
+    r = client.post(
+        "/api/v1/contacts",
+        json=_valid_payload(website=""),
+    )
+    assert r.status_code == 201
+
+
+def test_post_contacts_honeypot_missing_field_accepted(client):
+    """An omitted `website` is NOT a bot signal."""
+    payload = _valid_payload()
+    payload.pop("website", None)
+    r = client.post("/api/v1/contacts", json=payload)
+    assert r.status_code == 201
+
+
+# ---------------------------------------------------------------------------
+# 503 transient DB error retry (R4-C5)
+# ---------------------------------------------------------------------------
+
+
+class _FlakySession:
+    """A thin proxy around a real `AsyncSession` whose first `commit`
+    raises `OperationalError` and whose subsequent `commit` calls
+    delegate to the real session.
+
+    The proxy forwards every other attribute access to the wrapped
+    session, so the route handler is unaware it's talking to a fake.
+    `add`, `rollback`, `refresh`, etc. all hit the real session — the
+    only overridden method is `commit`, and only for the first call.
+    """
+
+    def __init__(self, real, fail_first: bool):
+        self._real = real
+        self._fail_first = fail_first
+        self.commit_count = 0
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+    async def commit(self):
+        self.commit_count += 1
+        if self._fail_first and self.commit_count == 1:
+            from sqlalchemy.exc import OperationalError
+
+            raise OperationalError("simulated transient", None, None)
+        await self._real.commit()
+
+    async def rollback(self):
+        await self._real.rollback()
+
+    async def refresh(self, *args, **kwargs):
+        await self._real.refresh(*args, **kwargs)
+
+
+@pytest.fixture
+def flaky_session_dep(app):
+    """Override the `get_session` dep to return a `_FlakySession`.
+
+    Yields the wrapper holder so the test can assert on `commit_count`
+    after the request.
+    """
+    from app.core.db import get_session, get_session_factory
+
+    wrapper_holder = {"wrapper": None}
+
+    async def override_dep():
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            wrapper = _FlakySession(session, fail_first=True)
+            wrapper_holder["wrapper"] = wrapper
+            try:
+                yield wrapper
+            except Exception:
+                await session.rollback()
+                raise
+
+    app.dependency_overrides[get_session] = override_dep
+    yield wrapper_holder
+    app.dependency_overrides.pop(get_session, None)
+
+
+def test_post_contacts_transient_db_error_retries_and_succeeds(
+    client, flaky_session_dep
+):
+    """A transient `OperationalError` on the first commit must be
+    retried by the route's `_commit_with_retry` helper and ultimately
+    return 201. The row must end up persisted (proving the retry
+    actually wrote to the DB, not just swallowed the error)."""
+    from sqlmodel import select
+
+    from app.models.contact import ContactMessage
+
+    r = client.post(
+        "/api/v1/contacts", json=_valid_payload(email="retry@example.com")
+    )
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["error"] is None
+    assert "id" in body["data"]
+
+    # The flaky session's `commit` must have been called at least
+    # twice (one failure + one success).
+    wrapper = flaky_session_dep["wrapper"]
+    assert wrapper is not None
+    assert wrapper.commit_count >= 2
+
+    # And the row must really be in the DB (proving the retry's
+    # second commit actually persisted).
+    async def _check():
+        from app.core.db import get_session_factory
+
+        factory = get_session_factory()
+        async with factory() as s:
+            rows = (
+                await s.execute(
+                    select(ContactMessage).where(
+                        ContactMessage.email == "retry@example.com"
+                    )
+                )
+            ).scalars().all()
+            return rows
+
+    rows = asyncio_run(_check())
+    assert len(rows) == 1
+
+
+def test_post_contacts_persistent_db_error_returns_503(
+    client, app
+):
+    """Two consecutive `OperationalError`s must surface as 503
+    `transient_error` (not 500) so the client can distinguish a
+    transient outage from a permanent failure.
+
+    The route's `_commit_with_retry` retries once; on the second
+    failure it raises `HTTPException(503, "transient_error")` which
+    the global handler maps to the standard envelope.
+    """
+    from app.core.db import get_session
+
+    # Wrap the real session with a `_FlakySession` whose every
+    # commit fails.
+    async def override_dep():
+        from app.core.db import get_session_factory
+
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            wrapper = _FlakySession(session, fail_first=False)
+            # Make the proxy raise on EVERY commit by patching
+            # `commit` directly so we never delegate.
+            from sqlalchemy.exc import OperationalError
+
+            async def always_fail():
+                wrapper.commit_count += 1
+                raise OperationalError("persistent failure", None, None)
+
+            wrapper.commit = always_fail  # type: ignore[assignment]
+            try:
+                yield wrapper
+            except Exception:
+                await session.rollback()
+                raise
+
+    app.dependency_overrides[get_session] = override_dep
+    try:
+        r = client.post(
+            "/api/v1/contacts", json=_valid_payload(email="fail@example.com")
+        )
+        assert r.status_code == 503, r.text
+        body = r.json()
+        assert body["error"]["code"] == "transient_error"
+    finally:
+        app.dependency_overrides.pop(get_session, None)
 
 
 # ---------------------------------------------------------------------------
@@ -214,9 +421,9 @@ def test_post_contacts_6th_in_hour_returns_429():
         response: Response,
         session: AsyncSession = Depends(fresh_session_dep),
     ):
-        if payload.website and payload.website.strip():
+        if payload.website is not None and payload.website.strip():
             from fastapi import HTTPException
-            raise HTTPException(status_code=400, detail="honeypot_triggered")
+            raise HTTPException(status_code=400, detail="bad_request")
         row = ContactMessage(
             name=payload.name,
             email=str(payload.email).lower(),
@@ -246,8 +453,8 @@ def test_post_contacts_6th_in_hour_returns_429():
         valid_codes = {
             "invalid_credentials", "token_expired", "unauthorized", "forbidden",
             "not_found", "validation_error", "rate_limited", "file_too_large",
-            "unsupported_media_type", "honeypot_triggered", "invalid_parameter",
-            "server_error",
+            "unsupported_media_type", "bad_request", "invalid_parameter",
+            "transient_error", "server_error",
         }
         code_map = {
             400: "bad_request", 401: "unauthorized", 403: "forbidden",

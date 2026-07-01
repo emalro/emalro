@@ -157,6 +157,7 @@ def _http_status_to_error_code(status_code: int, detail: object) -> str:
         "unsupported_media_type",
         "honeypot_triggered",
         "invalid_parameter",
+        "transient_error",
         "server_error",
     }:
         return detail
