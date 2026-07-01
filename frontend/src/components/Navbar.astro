@@ -12,14 +12,14 @@ import LanguageSelector from "./LanguageSelector.astro";
  * `data-mobile-nav` script can find anchors and dismiss the
  * mobile menu on click. Routes (non-`#` links) don't carry the
  * `data-anchor-id` attribute because the smooth-scroll code
- * only fires on `#`-prefixed hrefs.
+ * only fires on hash-prefixed hrefs (`#xxx` or `/#xxx`).
  */
 const links = [
-  { id: "hero", label: { es: "Inicio", en: "Home" }, href: "#hero" },
-  { id: "experience", label: { es: "Experiencia", en: "Experience" }, href: "#experience" },
-  { id: "education", label: { es: "Educación", en: "Education" }, href: "#education" },
-  { id: "projects", label: { es: "Proyectos", en: "Projects" }, href: "#projects" },
-  { id: "courses", label: { es: "Cursos", en: "Courses" }, href: "#courses" },
+  { id: "hero", label: { es: "Inicio", en: "Home" }, href: "/#hero" },
+  { id: "experience", label: { es: "Experiencia", en: "Experience" }, href: "/#experience" },
+  { id: "education", label: { es: "Educación", en: "Education" }, href: "/#education" },
+  { id: "projects", label: { es: "Proyectos", en: "Projects" }, href: "/#projects" },
+  { id: "courses", label: { es: "Cursos", en: "Courses" }, href: "/#courses" },
   { id: "blog", label: { es: "Blog", en: "Blog" }, href: "/blog" },
   { id: "contact", label: { es: "Contacto", en: "Contact" }, href: "/contact" },
 ] as const;
@@ -39,7 +39,7 @@ const links = [
     <nav class="ml-4 hidden flex-1 items-center gap-1 md:flex">
       {
         links.map((link) => {
-          const isAnchor = link.href.startsWith("#");
+          const isAnchor = link.href.includes("#");
           return (
             <a
               href={link.href}
@@ -79,7 +79,7 @@ const links = [
     >
       {
         links.map((link) => {
-          const isAnchor = link.href.startsWith("#");
+          const isAnchor = link.href.includes("#");
           return (
             <a
               href={link.href}
@@ -112,7 +112,7 @@ const links = [
       setOpen(toggle.getAttribute("aria-expanded") !== "true");
     });
     menu
-      .querySelectorAll<HTMLAnchorElement>("a[href^='#']")
+      .querySelectorAll<HTMLAnchorElement>("a[href*='#']")
       .forEach((link) => link.addEventListener("click", () => setOpen(false)));
     document.addEventListener("keydown", (event) => {
       if (
