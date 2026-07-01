@@ -37,6 +37,19 @@ function start(): void {
 
   const es = el.dataset.typedRole ?? "";
   const en = el.dataset.typedRoleEn ?? "";
+
+  // Same role in both languages: skip the typing animation entirely
+  // and remove the cursor. Without this guard, the animation
+  // backspaces the es string, pauses, and retypes the en string
+  // — which is identical — so the user sees the same text
+  // disappear and reappear in a loop (reads as "the role is
+  // duplicated"). The static text from the Astro-rendered
+  // <span data-typed-role-text> stays in place.
+  if (es === en) {
+    const cursor = el.querySelector("[data-typed-cursor]");
+    cursor?.remove();
+    return;
+  }
   const text = document.createTextNode(es);
   if (el.firstChild) el.replaceChild(text, el.firstChild);
   else el.insertBefore(text, el.firstChild);
