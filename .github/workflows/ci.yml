@@ -25,6 +25,13 @@ jobs:
         run: npm ci
       - name: Validate i18n shape (prebuild)
         run: npm run validate:i18n
+      - name: Run frontend tests
+        # The vitest suite (ContactForm unit tests + happy-dom setup)
+        # was added in the contact-form PR. It exercises the form's
+        # validation, error mapping, and the api.ts catch branches,
+        # so it must run in CI to catch regressions on the public
+        # mutation endpoint. No backend needed; runs entirely in-process.
+        run: npm test
       # The build-time fetch in `lib/api.ts` requires a reachable backend
       # (the `/blog` list and `/blog/[slug]` pages call `requestBuildTime` on
       # the public API). To make the frontend build hermetic in CI, we boot
