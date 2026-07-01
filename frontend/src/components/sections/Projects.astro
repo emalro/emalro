@@ -37,15 +37,19 @@ const sortKey = (iso: string): string => iso.replaceAll("-", "");
             <span class="font-mono text-[11px] text-ink-tertiary">{t}</span>
           ))}
           <div class="ml-auto flex items-center gap-1">
-            {p.github_url && (
-              <a href={p.github_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="Repository">
-                <span class="font-mono text-xs">Repo</span>
-              </a>
-            )}
-            {p.demo_url && (
-              <a href={p.demo_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="Live demo">
-                <span class="font-mono text-xs text-accent">Demo</span>
-              </a>
+            {(p.github_url || p.demo_url) && (
+              <>
+                {p.github_url && (
+                  <a href={p.github_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="Repository">
+                    <span class="font-mono text-xs">Repo</span>
+                  </a>
+                )}
+                {p.demo_url && (
+                  <a href={p.demo_url} target="_blank" rel="noopener noreferrer" class="btn-ghost" aria-label="Live demo">
+                    <span class="font-mono text-xs text-accent">Demo</span>
+                  </a>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -2,7 +2,7 @@
   "type": "object",
   "required": [
     "linkedin",
-    "repo",
+    "github",
     "kaggle",
     "tableau_public"
   ],
@@ -10,7 +10,7 @@
     "linkedin": {
       "type": "string"
     },
-    "repo": {
+    "github": {
       "type": "string"
     },
     "kaggle": {

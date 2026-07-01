@@ -6,12 +6,17 @@
  * The year is computed at runtime (PR #1 already did this) so the
  * copyright stays current without a rebuild. Social URLs come from
  * src/data/social.json — the four required networks are rendered in
- * the locked order (LinkedIn, Repo, Kaggle, Tableau Public) and any
+ * the locked order (LinkedIn, GitHub, Kaggle, Tableau Public) and any
  * empty URL is hidden.
  *
- * The `repo` platform is provider-agnostic (was `github` in MVP):
- * the operator can swap the URL in `social.json` to point at
- * GitLab, Bitbucket, Codeberg, etc. without renaming the field.
+ * Per-project repo buttons in the Projects section render as "Repo"
+ * with the Lucide Code mark (provider-agnostic — projects can live
+ * on any forge). The footer is different: it shows the user's own
+ * "code presence" link, which is GitHub-specific, so it uses the
+ * GitHub octocat mark and the literal "GitHub" label. If the
+ * operator ever moves their primary code presence to another
+ * forge, this entry has to be updated to match (platform, label,
+ * and the social.json URL).
  *
  * Platform names are not localized (they are proper nouns in both
  * ES and EN), so this component does not consume the i18n contract
@@ -24,12 +29,11 @@ const year = new Date().getFullYear();
 
 const networks = [
   { platform: "linkedin" as const, key: "linkedin", label: "LinkedIn" },
-  { platform: "repo" as const, key: "repo", label: "Repo" },
+  { platform: "github" as const, key: "github", label: "GitHub" },
   { platform: "kaggle" as const, key: "kaggle", label: "Kaggle" },
   { platform: "tableau" as const, key: "tableau_public", label: "Tableau Public" },
 ];
 ---
-
 <footer class="border-t border-border">
   <div
     class="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-6 text-xs text-ink-tertiary md:flex-row md:items-center md:justify-between md:px-8"
