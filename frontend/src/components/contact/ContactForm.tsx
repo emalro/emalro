@@ -67,7 +67,10 @@ const SUBJECT_MAX = 200;
 const MESSAGE_MIN = 10;
 const MESSAGE_MAX = 5000;
 
-function validate(
+/** Per-field validation (exported for unit tests; the form's
+ *  behavior contract is "validate returns exactly these errors
+ *  for exactly these inputs"). Pure function, no side effects. */
+export function validate(
   values: {
     name: string;
     email: string;
@@ -111,7 +114,10 @@ function validate(
   return errors;
 }
 
-function isClean(errors: FieldErrors): boolean {
+/** All-clear check for the validation result. Exported for
+ *  unit tests; the form calls it before allowing the submission
+ *  to proceed to the network. */
+export function isClean(errors: FieldErrors): boolean {
   return (
     errors.name === null &&
     errors.email === null &&
