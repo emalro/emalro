@@ -284,3 +284,69 @@ class AdminImageDeleteRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     path: str = Field(..., min_length=1, max_length=500)
+
+
+# ---------------------------------------------------------------------------
+# Dashboard counts (PR #6)
+#
+# Single endpoint that returns the four card counts the admin
+# dashboard renders. Replaces the four `useQuery` calls in the
+# PR #5b Dashboard.tsx (the migration lands in PR #6b, but the
+# endpoint ships here so the surface is testable).
+# ---------------------------------------------------------------------------
+
+
+class ProjectsCounts(BaseModel):
+    """Project dashboard counts."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    published: int = 0
+    drafts: int = 0
+
+
+class BlogCounts(BaseModel):
+    """Blog dashboard counts."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    published: int = 0
+    drafts: int = 0
+
+
+class ContactsCounts(BaseModel):
+    """Contact inbox dashboard counts.
+
+    `total` is the inbox count (deleted_at IS NULL).
+    `unread` is the unread count (deleted_at IS NULL AND read_at IS NULL).
+    `trashed` is the trash count (deleted_at IS NOT NULL).
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    total: int = 0
+    unread: int = 0
+    trashed: int = 0
+
+
+class ResumeCounts(BaseModel):
+    """Resume dashboard counts."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    total: int = 0
+
+
+class AdminDashboardCounts(BaseModel):
+    """Aggregate dashboard counts.
+
+    Returned by `GET /api/v1/admin/dashboard/counts` as the `data`
+    field of the standard envelope.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    projects: ProjectsCounts = Field(default_factory=ProjectsCounts)
+    blog: BlogCounts = Field(default_factory=BlogCounts)
+    contacts: ContactsCounts = Field(default_factory=ContactsCounts)
+    resume: ResumeCounts = Field(default_factory=ResumeCounts)

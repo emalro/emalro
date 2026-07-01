@@ -1347,3 +1347,109 @@ def test_admin_images_url_works_as_project_image_url(
     assert r2.status_code == 201, r2.text
     assert r2.json()["data"]["image_url"] == image_url
 
+
+# ---------------------------------------------------------------------------
+# Dashboard counts (PR #6)
+#
+# The endpoint returns the four card counts the admin dashboard
+# renders. Tests seed a known mix of rows (visible + draft, read +
+# unread, inbox + trash) and assert the counts match.
+# ---------------------------------------------------------------------------
+
+
+def test_admin_dashboard_counts_requires_auth(client):
+    """GET without cookie is 401."""
+    r = client.get("/api/v1/admin/dashboard/counts")
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
+
+def test_admin_dashboard_counts_empty(client, admin_user, db_session):
+    """No rows -> all counts are zero."""
+    _login(client)
+    r = client.get("/api/v1/admin/dashboard/counts")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["error"] is None
+    data = body["data"]
+    assert data["projects"] == {"published": 0, "drafts": 0}
+    assert data["blog"] == {"published": 0, "drafts": 0}
+    assert data["contacts"] == {"total": 0, "unread": 0, "trashed": 0}
+    assert data["resume"] == {"total": 0}
+
+
+def test_admin_dashboard_counts_with_seeded_data(
+    client, admin_user, db_session
+):
+    """Seeded mix -> counts match the seeded mix."""
+    from datetime import datetime, timezone
+
+    # 2 visible + 1 draft projects.
+    _run(seed_project(db_session, slug="p1", is_visible=True))
+    _run(seed_project(db_session, slug="p2", is_visible=True))
+    _run(seed_project(db_session, slug="p3", is_visible=False))
+
+    # 1 visible + 2 drafts blog posts.
+    _run(seed_blog_post(db_session, slug="b1", is_visible=True))
+    _run(seed_blog_post(db_session, slug="b2", is_visible=False))
+    _run(seed_blog_post(db_session, slug="b3", is_visible=False))
+
+    # 3 contacts: 2 inbox (1 read, 1 unread) + 1 trashed.
+    now = datetime.now(timezone.utc)
+    _run(seed_contact(db_session, email="a@example.com", name="A"))
+    _run(
+        seed_contact(
+            db_session,
+            email="b@example.com",
+            name="B",
+            read_at=now,
+        )
+    )
+    _run(
+        seed_contact(
+            db_session,
+            email="c@example.com",
+            name="C",
+            deleted_at=now,
+        )
+    )
+
+    # 4 resume rows: 1 personal + 3 experience.
+    _run(seed_resume_personal(db_session))
+    _run(seed_resume_experience(db_session, organization="X"))
+    _run(seed_resume_experience(db_session, organization="Y"))
+    _run(seed_resume_experience(db_session, organization="Z"))
+
+    _login(client)
+    r = client.get("/api/v1/admin/dashboard/counts")
+    assert r.status_code == 200
+    data = r.json()["data"]
+    assert data["projects"] == {"published": 2, "drafts": 1}
+    assert data["blog"] == {"published": 1, "drafts": 2}
+    assert data["contacts"] == {"total": 2, "unread": 1, "trashed": 1}
+    assert data["resume"] == {"total": 4}
+
+
+def test_admin_dashboard_counts_trash_excluded_from_unread(
+    client, admin_user, db_session
+):
+    """A trashed, unread message is NOT counted as unread (inbox scope)."""
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc)
+    _run(
+        seed_contact(
+            db_session,
+            email="trash-unread@example.com",
+            name="Trash Unread",
+            deleted_at=now,
+        )
+    )
+    _login(client)
+    r = client.get("/api/v1/admin/dashboard/counts")
+    data = r.json()["data"]
+    # Trashed AND unread -> trashed=1, unread=0, total=0.
+    assert data["contacts"]["trashed"] == 1
+    assert data["contacts"]["unread"] == 0
+    assert data["contacts"]["total"] == 0
+
