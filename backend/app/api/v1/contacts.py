@@ -12,10 +12,11 @@ Validation (Pydantic) rejects bad payloads with 422. The success
 path returns 201 with the new row's `id` and `received_at`.
 """
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -27,7 +28,50 @@ from app.schemas.envelope import Envelope
 
 logger = logging.getLogger(__name__)
 
+# Backoff for the single retry of a transient DB commit failure.
+# 100 ms is short enough to be invisible to the user (total request
+# stays well under the 2 s frontend timeout) and long enough to
+# clear a momentary pooler / network blip on a typical cloud DB.
+_COMMIT_RETRY_DELAY_S = 0.1
+
 router = APIRouter()
+
+
+async def _commit_with_retry(
+    session: AsyncSession, pending: list
+) -> None:
+    """Commit once, retry once on `OperationalError`.
+
+    The contact form is the only public mutation in the API and is
+    not idempotent (no client-supplied id we can dedupe on), so we
+    accept the small risk of a duplicate on the rare double-success
+    case in exchange for resilience to the much more common
+    transient `OperationalError` (pooler reset, network blip).
+
+    `pending` is the list of model instances the caller has just
+    `add()`-ed. After a failed commit the session is rolled back and
+    the instances become detached, so we re-`add()` them before the
+    retry — otherwise the second `commit()` would succeed but flush
+    nothing.
+    """
+    try:
+        await session.commit()
+    except OperationalError as exc:
+        logger.warning("DB commit failed, retrying once: %s", exc)
+        # Roll back the failed transaction so the retry starts clean.
+        await session.rollback()
+        for obj in pending:
+            session.add(obj)
+        await asyncio.sleep(_COMMIT_RETRY_DELAY_S)
+        try:
+            await session.commit()
+        except OperationalError as exc2:
+            logger.error("DB commit failed on retry: %s", exc2)
+            await session.rollback()
+            raise HTTPException(
+                status_code=503,
+                detail="transient_error",
+            ) from exc2
 
 
 @router.post(
@@ -66,7 +110,7 @@ async def create_contact(
         user_agent=request.headers.get("user-agent"),
     )
     session.add(row)
-    await session.commit()
+    await _commit_with_retry(session, [row])
     await session.refresh(row)
 
     return Envelope.ok(
