@@ -210,18 +210,33 @@ export function ContactForm(
         subject: subject.trim() || undefined,
         message: message.trim(),
         // `website` is the honeypot. If a bot filled it, the
-        // backend will return 400 `honeypot_triggered`; we don't
+        // backend will return 400 `bad_request`; we don't
         // differentiate here because the user experience is
         // identical (show the generic error banner).
         website: honeypot,
       });
       setStatus("success");
     } catch (err) {
+      // Log every failure with the backend's request id (if any)
+      // so a user-reported issue can be correlated with a server
+      // log line. This runs BEFORE the state mapping so the
+      // console always has the full error context, even for the
+      // generic "other error" branch.
       if (err instanceof ApiError) {
+        // eslint-disable-next-line no-console
+        console.error("[ContactForm] submit failed", {
+          code: err.code,
+          status: err.status,
+          requestId: err.requestId,
+        });
         if (err.status === 429 || err.code === "rate_limited") {
           setStatus("rate_limited");
           setBannerError(resolveLabel(contactLabels.state.rateLimited, lang));
         } else if (err.status === 0 || err.code === "network_error") {
+          // After commit 3, the api layer reliably throws
+          // `ApiError("network_error", ..., 0, requestId)` for
+          // timeouts and network failures, so the previously dead
+          // `state.networkError` branch is now reachable.
           setStatus("error");
           setBannerError(
             resolveLabel(contactLabels.state.networkError, lang),
@@ -231,6 +246,10 @@ export function ContactForm(
           setBannerError(resolveLabel(contactLabels.state.error, lang));
         }
       } else {
+        // Non-`ApiError` throw (e.g. a coding bug in the api
+        // layer). Log it but still surface the generic banner.
+        // eslint-disable-next-line no-console
+        console.error("[ContactForm] submit failed (unexpected)", err);
         setStatus("error");
         setBannerError(resolveLabel(contactLabels.state.error, lang));
       }
@@ -269,6 +288,7 @@ export function ContactForm(
     >
       {bannerError && (
         <div
+          id="contact-error"
           role="alert"
           aria-live="assertive"
           class="flex items-start gap-2 rounded-md border border-error bg-error/10 px-3 py-2 font-mono text-sm text-error"
