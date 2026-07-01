@@ -16,7 +16,7 @@ import asyncio
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import DisconnectionError, InterfaceError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -40,13 +40,24 @@ router = APIRouter()
 async def _commit_with_retry(
     session: AsyncSession, pending: list
 ) -> None:
-    """Commit once, retry once on `OperationalError`.
+    """Commit once, retry once on a transient DB connection error.
 
     The contact form is the only public mutation in the API and is
     not idempotent (no client-supplied id we can dedupe on), so we
     accept the small risk of a duplicate on the rare double-success
-    case in exchange for resilience to the much more common
-    transient `OperationalError` (pooler reset, network blip).
+    case in exchange for resilience to the much more common transient
+    failures (pooler reset, network blip, momentary disconnects).
+
+    We catch the full family of transient errors:
+    - `OperationalError` (SQLAlchemy 1.x+ catch-all for connection
+      issues, deadlocks, lock timeouts).
+    - `DisconnectionError` (raised when asyncpg/psycopg detects a
+      broken connection mid-statement).
+    - `InterfaceError` (raised for DBAPI-level protocol errors).
+
+    All three extend `SQLAlchemyError` directly (not `OperationalError`)
+    in SQLAlchemy 2.x, so the original `except OperationalError` only
+    missed two of them.
 
     `pending` is the list of model instances the caller has just
     `add()`-ed. After a failed commit the session is rolled back and
@@ -54,9 +65,10 @@ async def _commit_with_retry(
     retry — otherwise the second `commit()` would succeed but flush
     nothing.
     """
+    transient_errors = (OperationalError, DisconnectionError, InterfaceError)
     try:
         await session.commit()
-    except OperationalError as exc:
+    except transient_errors as exc:
         logger.warning("DB commit failed, retrying once: %s", exc)
         # Roll back the failed transaction so the retry starts clean.
         await session.rollback()
@@ -65,7 +77,7 @@ async def _commit_with_retry(
         await asyncio.sleep(_COMMIT_RETRY_DELAY_S)
         try:
             await session.commit()
-        except OperationalError as exc2:
+        except transient_errors as exc2:
             logger.error("DB commit failed on retry: %s", exc2)
             await session.rollback()
             raise HTTPException(
