@@ -7,10 +7,17 @@
  * +Infinity so current jobs (end_date: null) always sort first in
  * descending order.
  *
- * SortControl.astro writes `data-sort-dir` to the root on each click.
+ * SortControl.astro renders a single toggle button per section
+ * (`data-sort-toggle`); clicking it flips the direction on the
+ * matching list root.
  */
 
 type Dir = "desc" | "asc";
+
+const ARIA_LABELS: Record<Dir, string> = {
+  desc: "Orden: más reciente primero",
+  asc: "Orden: más antiguo primero",
+};
 
 function valueOf(el: HTMLElement): number {
   const raw = el.dataset.sortValue;
@@ -34,21 +41,29 @@ function sortRoot(root: HTMLElement): void {
   items.forEach((item) => root.appendChild(item));
 }
 
+function updateToggle(btn: HTMLButtonElement, dir: Dir): void {
+  // Reflect the new state on the button itself so the CSS rotation
+  // in SortControl.astro flips the chevron, and so the next click
+  // toggles from the current value (not always from the default).
+  btn.dataset.sortDir = dir;
+  btn.setAttribute("aria-label", ARIA_LABELS[dir]);
+  btn.setAttribute("aria-pressed", dir === "asc" ? "true" : "false");
+}
+
 function init(): void {
   document.querySelectorAll<HTMLElement>("[data-sort-root]").forEach(sortRoot);
-  document.querySelectorAll<HTMLButtonElement>("[data-sort-control]").forEach((btn) => {
+  document.querySelectorAll<HTMLButtonElement>("[data-sort-toggle]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const root = document.getElementById(btn.dataset.sortControl ?? "");
+      const root = document.getElementById(btn.dataset.sortTarget ?? "");
       if (!root) return;
-      root.dataset.sortDir = btn.dataset.sortDir || "desc";
+      // Toggle from the current state (read from the root, which is
+      // the source of truth — the list was sorted to that direction
+      // last time the page rendered or last click).
+      const current = (root.dataset.sortDir as Dir) || "desc";
+      const next: Dir = current === "desc" ? "asc" : "desc";
+      root.dataset.sortDir = next;
       sortRoot(root);
-      const group = btn.closest("[data-sort-group]");
-      if (!group) return;
-      group.querySelectorAll<HTMLButtonElement>("[data-sort-control]").forEach((b) => {
-        const active = b === btn;
-        b.setAttribute("aria-pressed", active ? "true" : "false");
-        b.dataset.active = active ? "true" : "false";
-      });
+      updateToggle(btn, next);
     });
   });
 }

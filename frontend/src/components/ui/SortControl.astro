@@ -1,31 +1,55 @@
 ---
-// Segmented sort control: Reciente | Antiguo.
-// Click handler lives in src/scripts/sort.ts; reads
-// data-sort-dir + data-sort-control to find the target list root.
+// Single-button sort toggle for chronological sections.
+//
+// Replaces the previous "Reciente | Antiguo" segmented control with
+// a single chevron button. The chevron rotates 180° on click to
+// reflect the current direction (down = desc/recent first, up =
+// asc/oldest first). Click handler in src/scripts/sort.ts reads
+// data-sort-target to find the list root and toggles data-sort-dir.
+//
+// A11y: the button has a dynamic aria-label describing the current
+// state and `aria-pressed` for the toggle. Sighted users get the
+// chevron direction; assistive tech gets the explicit label.
 interface Props {
   target: string;
   defaultDir?: "desc" | "asc";
 }
 const { target, defaultDir = "desc" } = Astro.props;
-const options = [
-  { dir: "desc", label: "Reciente" },
-  { dir: "asc", label: "Antiguo" },
-] as const;
-const ChevronDown = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
-const ChevronUp = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>`;
+
+// The chevron path renders as a downward chevron by default. CSS
+// rotates it 180° when `data-sort-dir="asc"` so a single SVG covers
+// both states and the rotation is smooth (transition in <style>).
+const Chevron = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
+
+// Static initial labels. The script updates aria-label on each
+// click so the active state is announced. i18n: these strings stay
+// hardcoded Spanish for now (matches the original "Reciente / Antiguo"
+// hardcoding in the previous design); proper i18n is a follow-up.
+const ARIA_LABELS = {
+  desc: "Orden: más reciente primero",
+  asc: "Orden: más antiguo primero",
+} as const;
 ---
-<div data-sort-group class="inline-flex items-center overflow-hidden rounded-md border border-border bg-bg-surface font-mono text-xs" role="group" aria-label="Sort order">
-  {options.map((o) => (
-    <button
-      type="button"
-      class="inline-flex items-center gap-1 px-2.5 py-1.5 text-ink-secondary data-[active=true]:bg-accent-muted data-[active=true]:text-accent"
-      data-sort-control={target}
-      data-sort-dir={o.dir}
-      data-active={(o.dir === defaultDir).toString()}
-      aria-pressed={(o.dir === defaultDir).toString()}
-    >
-      <Fragment set:html={o.dir === "desc" ? ChevronDown : ChevronUp} />
-      {o.label}
-    </button>
-  ))}
-</div>
+<button
+  type="button"
+  data-sort-toggle
+  data-sort-target={target}
+  data-sort-dir={defaultDir}
+  aria-label={ARIA_LABELS[defaultDir]}
+  aria-pressed={defaultDir === "asc" ? "true" : "false"}
+  class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-bg-surface text-ink-secondary transition-colors hover:bg-bg-elevated hover:text-ink-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
+>
+  <Fragment set:html={Chevron} />
+</button>
+<style>
+  /* Rotate the chevron 180° when the sort direction is asc so the
+   * same SVG covers both states. The transition is short so the
+   * visual feedback feels like a toggle, not a slow spin. */
+  [data-sort-toggle] svg {
+    transition: transform 0.2s ease;
+    transform: rotate(0deg);
+  }
+  [data-sort-toggle][data-sort-dir="asc"] svg {
+    transform: rotate(180deg);
+  }
+</style>
