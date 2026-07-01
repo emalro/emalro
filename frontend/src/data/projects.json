@@ -1,5 +1,22 @@
 [
   {
+    "id": "emalro",
+    "title": {
+      "es": "emalro",
+      "en": "emalro"
+    },
+    "description": {
+      "es": "Portfolio personal bilingüe y blog construido end-to-end. Frontend estático en **Astro 4 + TypeScript + Tailwind** con islands de **Preact** (formulario de contacto, admin SPA). Backend en **FastAPI + Supabase (Postgres + Storage)** con auth JWT y rate-limiting. i18n con shape JSONB `{es, en}` enforced en build, blog con markdown sanitizado, y dark/light mode con persistencia en `localStorage`.",
+      "en": "Personal bilingual portfolio and blog built end-to-end. Static frontend in **Astro 4 + TypeScript + Tailwind** with **Preact** islands (contact form, admin SPA). Backend in **FastAPI + Supabase (Postgres + Storage)** with JWT auth and rate-limiting. i18n with JSONB `{es, en}` shape enforced at build, markdown-sanitized blog, and dark/light mode persisted in `localStorage`."
+    },
+    "image_url": "/img/projects/emalro.svg",
+    "technologies": ["Astro 4", "TypeScript", "Tailwind CSS", "Preact", "FastAPI", "Python", "Supabase", "PostgreSQL", "Vercel", "Render"],
+    "tags": ["astro", "typescript", "tailwind", "preact", "fastapi", "supabase", "postgresql", "python", "ssg", "i18n", "personal-portfolio"],
+    "github_url": "https://github.com/emalro/emalro",
+    "demo_url": "https://emalro.com.ar",
+    "created_at": "2026-06-29"
+  },
+  {
     "id": "proj-1",
     "title": {
       "es": "ApexLogic Retail Warehouse",
