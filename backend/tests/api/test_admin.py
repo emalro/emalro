@@ -1136,3 +1136,214 @@ def test_admin_resume_reorder_requires_auth(client, admin_user, db_session):
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "unauthorized"
 
+
+# ---------------------------------------------------------------------------
+# Image upload + delete (PR #6)
+#
+# Uses the LocalStorage backend (the default in dev / test). The
+# tests assert:
+# - A small valid PNG is accepted and a `path` + `url` are returned.
+# - The file is on disk at the returned path.
+# - A non-image is rejected with 415.
+# - An over-sized file is rejected with 413.
+# - A delete removes the file from disk.
+# - The returned URL can be used as `image_url` in a project POST.
+# ---------------------------------------------------------------------------
+
+
+# 1x1 transparent PNG, ~67 bytes. Hardcoded so the test doesn't
+# need an external fixture.
+_PNG_BYTES = (
+    b"\x89PNG\r\n\x1a\n"
+    b"\x00\x00\x00\rIHDR"
+    b"\x00\x00\x00\x01"
+    b"\x00\x00\x00\x01"
+    b"\x08\x06\x00\x00\x00"
+    b"\x1f\x15\xc4\x89"
+    b"\x00\x00\x00\rIDATx"
+    b"\x9cc\xfc\xcf\xc0P\x0f\x00\x05\x01\x01\x01"
+    b"\xc8\xeb\xf7Q"
+    b"\x00\x00\x00\x00IEND\xaeB`\x82"
+)
+
+
+def test_admin_images_upload_png(client, admin_user, tmp_path_factory, monkeypatch):
+    """POST a small PNG; assert 201, file on disk, path + url returned."""
+    import io
+    from app.core.config import get_settings
+
+    upload_dir = tmp_path_factory.mktemp("uploads")
+    monkeypatch.setenv("UPLOAD_DIR", str(upload_dir))
+    get_settings.cache_clear()
+
+    _login(client)
+    files = {"file": ("logo.png", io.BytesIO(_PNG_BYTES), "image/png")}
+    r = client.post("/api/v1/admin/images", files=files)
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["error"] is None
+    data = body["data"]
+    assert data["path"].startswith("images/")
+    assert data["path"].endswith(".png")
+    assert data["url"].startswith("/api/v1/admin/images/")
+
+    # The file landed on disk under the upload dir.
+    stored = upload_dir / data["path"]
+    assert stored.exists()
+    assert stored.read_bytes() == _PNG_BYTES
+
+
+def test_admin_images_upload_static_serve(
+    client, admin_user, tmp_path_factory, monkeypatch
+):
+    """The returned URL serves the file back (dev static route)."""
+    import io
+    from app.core.config import get_settings
+
+    upload_dir = tmp_path_factory.mktemp("uploads")
+    monkeypatch.setenv("UPLOAD_DIR", str(upload_dir))
+    get_settings.cache_clear()
+
+    _login(client)
+    files = {"file": ("logo.png", io.BytesIO(_PNG_BYTES), "image/png")}
+    r = client.post("/api/v1/admin/images", files=files)
+    assert r.status_code == 201
+    url = r.json()["data"]["url"]
+
+    r2 = client.get(url)
+    assert r2.status_code == 200
+    assert r2.content == _PNG_BYTES
+
+
+def test_admin_images_upload_unsupported_mime(client, admin_user):
+    """A text/plain file is rejected with 415."""
+    import io
+    _login(client)
+    files = {"file": ("notes.txt", io.BytesIO(b"hello world"), "text/plain")}
+    r = client.post("/api/v1/admin/images", files=files)
+    assert r.status_code == 415
+    assert r.json()["error"]["code"] == "unsupported_media_type"
+
+
+def test_admin_images_upload_too_large(client, admin_user, monkeypatch):
+    """An over-sized file is rejected with 413."""
+    import io
+    from app.core.config import get_settings
+
+    # Drop the limit to 100 bytes so the test is fast.
+    monkeypatch.setenv("IMAGE_MAX_BYTES", "100")
+    get_settings.cache_clear()
+
+    _login(client)
+    big = b"\x89PNG\r\n" + b"x" * 200  # PNG header + 200 bytes > 100
+    files = {"file": ("big.png", io.BytesIO(big), "image/png")}
+    r = client.post("/api/v1/admin/images", files=files)
+    assert r.status_code == 413
+    assert r.json()["error"]["code"] == "file_too_large"
+
+
+def test_admin_images_upload_requires_auth(client, admin_user):
+    """Upload without cookie is 401."""
+    import io
+    files = {"file": ("logo.png", io.BytesIO(_PNG_BYTES), "image/png")}
+    r = client.post("/api/v1/admin/images", files=files)
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
+
+def test_admin_images_delete_success(
+    client, admin_user, tmp_path_factory, monkeypatch
+):
+    """DELETE removes the file from disk; 204 on success."""
+    import io
+    from app.core.config import get_settings
+
+    upload_dir = tmp_path_factory.mktemp("uploads")
+    monkeypatch.setenv("UPLOAD_DIR", str(upload_dir))
+    get_settings.cache_clear()
+
+    _login(client)
+    files = {"file": ("logo.png", io.BytesIO(_PNG_BYTES), "image/png")}
+    r = client.post("/api/v1/admin/images", files=files)
+    assert r.status_code == 201
+    path = r.json()["data"]["path"]
+    stored = upload_dir / path
+    assert stored.exists()
+
+    r2 = client.request("DELETE", "/api/v1/admin/images", json={"path": path})
+    assert r2.status_code == 204
+    assert not stored.exists()
+
+
+def test_admin_images_delete_missing_path_is_204(
+    client, admin_user, tmp_path_factory, monkeypatch
+):
+    """DELETE on a missing path is 204 (orphan cleanup is idempotent)."""
+    from app.core.config import get_settings
+
+    upload_dir = tmp_path_factory.mktemp("uploads")
+    monkeypatch.setenv("UPLOAD_DIR", str(upload_dir))
+    get_settings.cache_clear()
+
+    _login(client)
+    r = client.request(
+        "DELETE",
+        "/api/v1/admin/images",
+        json={"path": "images/2099/01/does-not-exist.png"},
+    )
+    assert r.status_code == 204
+
+
+def test_admin_images_delete_validation(client, admin_user):
+    """DELETE body is `{"path": str}`; extra keys are rejected (422)."""
+    _login(client)
+    r = client.request(
+        "DELETE",
+        "/api/v1/admin/images",
+        json={"path": "x.png", "extra": "nope"},
+    )
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "validation_error"
+
+
+def test_admin_images_delete_requires_auth(client, admin_user):
+    """DELETE without cookie is 401."""
+    r = client.request("DELETE", "/api/v1/admin/images", json={"path": "x.png"})
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
+
+def test_admin_images_url_works_as_project_image_url(
+    client, admin_user, db_session, tmp_path_factory, monkeypatch
+):
+    """The URL from upload can be used as `image_url` in a project POST."""
+    import io
+    from app.core.config import get_settings
+
+    upload_dir = tmp_path_factory.mktemp("uploads")
+    monkeypatch.setenv("UPLOAD_DIR", str(upload_dir))
+    get_settings.cache_clear()
+
+    _login(client)
+    files = {"file": ("logo.png", io.BytesIO(_PNG_BYTES), "image/png")}
+    r = client.post("/api/v1/admin/images", files=files)
+    assert r.status_code == 201
+    image_url = r.json()["data"]["url"]
+
+    # Use that URL as the image_url in a project POST.
+    r2 = client.post(
+        "/api/v1/admin/projects",
+        json={
+            "title": {"es": "Con Imagen", "en": "With Image"},
+            "description": {"es": "Descripcion", "en": "Description"},
+            "technologies": [],
+            "tags": [],
+            "image_url": image_url,
+            "github_url": None,
+            "demo_url": None,
+            "is_visible": True,
+        },
+    )
+    assert r2.status_code == 201, r2.text
+    assert r2.json()["data"]["image_url"] == image_url
+

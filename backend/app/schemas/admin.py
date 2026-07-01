@@ -258,3 +258,29 @@ class AdminResumeReorderRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     order: list[AdminResumeReorderItem] = Field(..., min_length=1)
+
+
+# ---------------------------------------------------------------------------
+# Image upload (PR #6)
+#
+# `POST /admin/images` (multipart form, `file` field) returns the
+# storage path and the public URL. `DELETE /admin/images` takes a
+# JSON body with the `path` to remove.
+# ---------------------------------------------------------------------------
+
+
+class AdminImageUploadResponse(BaseModel):
+    """Response for `POST /admin/images`."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    url: str
+    path: str
+
+
+class AdminImageDeleteRequest(BaseModel):
+    """Body for `DELETE /admin/images` (JSON)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    path: str = Field(..., min_length=1, max_length=500)

@@ -7,6 +7,9 @@ Each sub-router is mounted at its own prefix and carries the
 - `admin_blog.router`     — blog CRUD (`/admin/blog`).
 - `admin_contacts.router` — contacts list/trash/PATCH/DELETE (`/admin/contacts`).
 - `admin_resume.router`   — resume CRUD + reorder (`/admin/resume`).
+- `admin_images.router`   — image upload + delete (`/admin/images`).
+  Plus a public static-serve sub-router at `/admin/images` (no
+  auth) for the dev-only file serving.
 
 The aggregator also adds a defense-in-depth `get_current_admin`
 dependency at its own level so any future sub-router that forgets
@@ -20,6 +23,7 @@ from fastapi import APIRouter, Depends
 from app.api.v1 import (
     admin_blog,
     admin_contacts,
+    admin_images,
     admin_projects,
     admin_resume,
 )
@@ -34,3 +38,5 @@ router.include_router(admin_projects.router)
 router.include_router(admin_blog.router)
 router.include_router(admin_contacts.router)
 router.include_router(admin_resume.router)
+router.include_router(admin_images.router)
+router.include_router(admin_images.public_router)
