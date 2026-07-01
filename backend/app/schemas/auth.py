@@ -12,3 +12,17 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int
+
+
+class MeResponse(BaseModel):
+    """The current admin's basic info returned by `GET /api/v1/auth/me`.
+
+    The frontend calls this endpoint on app load to verify the
+    `emalro_session` cookie is still valid and to get the admin's
+    email for the dashboard. Email is sourced from the DB row
+    (already validated at login) so it is typed as plain `str`.
+    """
+
+    id: str
+    email: str
+    is_active: bool

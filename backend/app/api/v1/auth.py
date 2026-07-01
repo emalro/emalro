@@ -21,10 +21,11 @@ from app.core.rate_limit import limiter as _app_limiter
 from app.core.security import (
     SESSION_COOKIE_NAME,
     create_access_token,
+    get_current_admin,
     verify_password,
 )
 from app.models.admin_user import AdminUser
-from app.schemas.auth import LoginRequest, LoginResponse
+from app.schemas.auth import LoginRequest, LoginResponse, MeResponse
 from app.schemas.envelope import Envelope
 
 router = APIRouter()
@@ -98,3 +99,30 @@ async def logout() -> JSONResponse:
     )
     resp.delete_cookie(SESSION_COOKIE_NAME, path="/")
     return resp
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/auth/me
+# ---------------------------------------------------------------------------
+
+
+@router.get("/me", response_model=Envelope[MeResponse])
+async def me(
+    admin: AdminUser = Depends(get_current_admin),
+) -> Envelope[MeResponse]:
+    """Return the current admin's basic info.
+
+    Used by the admin SPA on app load to verify the `emalro_session`
+    cookie is still valid and to fetch the admin's email for the
+    dashboard header. The `get_current_admin` dependency reads +
+    decodes the cookie and loads the `AdminUser` row from the DB;
+    on any auth failure it raises 401 with the `unauthorized` or
+    `token_expired` envelope code.
+    """
+    return Envelope.ok(
+        MeResponse(
+            id=admin.id,
+            email=admin.email,
+            is_active=admin.is_active,
+        )
+    )
