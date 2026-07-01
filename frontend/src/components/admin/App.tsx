@@ -13,23 +13,17 @@
  * renders this component; everything inside (login redirect,
  * dashboard, CRUD) is purely client-side.
  *
- * Auth + QueryClient are wired in later commits (7 and 6). This
- * commit establishes the shell, the route table, and the 404
- * page. The `<QueryClientProvider>` import is included here so
- * the public-site bundle does NOT grow when commit 6 lands
- * (wouter + tanstack-query are both admin-only).
+ * Data layer: TanStack Query, via the shared `adminQueryClient`
+ * (see `src/lib/admin-query.ts`). The provider lives inside
+ * `<App>` so the QueryClient runtime is only loaded for the
+ * admin bundle — the public site never imports it.
+ *
+ * Auth + login form: wired in commit 7.
  */
 import { Route, Switch, Link } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      refetchOnWindowFocus: true,
-    },
-  },
-});
+import { adminQueryClient } from "../../lib/admin-query";
 
 /** Placeholder dashboard. Replaced by the real Dashboard in commit 8. */
 function Dashboard() {
@@ -77,7 +71,7 @@ function NotFound() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={adminQueryClient}>
       <Switch>
         <Route path="/admin" component={LoginPlaceholder} />
         <Route path="/admin/dashboard" component={Dashboard} />
