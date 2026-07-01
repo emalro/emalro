@@ -719,3 +719,153 @@ def test_admin_blog_delete_requires_auth(client, admin_user, db_session):
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "unauthorized"
 
+
+# ---------------------------------------------------------------------------
+# Contacts PATCH / DELETE (PR #6)
+#
+# Contact messages use soft-delete with `deleted_at`. The PATCH
+# endpoint is the operator's primary path; the DELETE is the
+# irreversible cleanup. The combined PATCH accepts BOTH the
+# `deleted` and `read` toggles in a single request so the
+# operator can chain operations.
+# ---------------------------------------------------------------------------
+
+
+def test_admin_contacts_patch_trash(client, admin_user, db_session):
+    """PATCH deleted=true moves the row to trash."""
+    msg = _run(seed_contact(db_session, email="trashme@example.com", name="Trash"))
+    _login(client)
+    r = client.patch(
+        f"/api/v1/admin/contacts/{msg.id}",
+        json={"deleted": True, "read": False},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["error"] is None
+    assert body["data"]["deleted_at"] is not None
+
+    # Inbox no longer includes the message; trash does.
+    inbox = client.get("/api/v1/admin/contacts").json()["data"]
+    trash = client.get("/api/v1/admin/contacts/trash").json()["data"]
+    inbox_emails = [m["email"] for m in inbox]
+    trash_emails = [m["email"] for m in trash]
+    assert "trashme@example.com" not in inbox_emails
+    assert "trashme@example.com" in trash_emails
+
+
+def test_admin_contacts_patch_restore(client, admin_user, db_session):
+    """PATCH deleted=false (on a trashed message) restores it."""
+    from datetime import datetime, timezone
+
+    msg = _run(
+        seed_contact(
+            db_session,
+            email="restore@example.com",
+            name="Restore",
+            deleted_at=datetime.now(timezone.utc),
+        )
+    )
+    _login(client)
+    r = client.patch(
+        f"/api/v1/admin/contacts/{msg.id}",
+        json={"deleted": False, "read": False},
+    )
+    assert r.status_code == 200
+    assert r.json()["data"]["deleted_at"] is None
+
+    inbox = client.get("/api/v1/admin/contacts").json()["data"]
+    assert "restore@example.com" in [m["email"] for m in inbox]
+
+
+def test_admin_contacts_patch_mark_read(client, admin_user, db_session):
+    """PATCH read=true sets `read_at` on the message."""
+    msg = _run(seed_contact(db_session, email="readme@example.com", name="Read"))
+    _login(client)
+    r = client.patch(
+        f"/api/v1/admin/contacts/{msg.id}",
+        json={"deleted": False, "read": True},
+    )
+    assert r.status_code == 200
+    assert r.json()["data"]["read_at"] is not None
+
+
+def test_admin_contacts_patch_read_endpoint(client, admin_user, db_session):
+    """PATCH /read flips just the read_at timestamp."""
+    msg = _run(seed_contact(db_session, email="focus@example.com", name="Focus"))
+    _login(client)
+    r = client.patch(
+        f"/api/v1/admin/contacts/{msg.id}/read",
+        json={"deleted": False, "read": True},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["data"]["read_at"] is not None
+    # The dedicated /read endpoint does NOT touch deleted_at.
+    assert body["data"]["deleted_at"] is None
+
+
+def test_admin_contacts_patch_not_found(client, admin_user, db_session):
+    """PATCH on a missing id returns 404."""
+    _login(client)
+    r = client.patch(
+        "/api/v1/admin/contacts/00000000-0000-0000-0000-000000000000",
+        json={"deleted": True, "read": True},
+    )
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "not_found"
+
+
+def test_admin_contacts_patch_requires_auth(client, admin_user, db_session):
+    """PATCH without cookie is 401."""
+    msg = _run(seed_contact(db_session))
+    r = client.patch(
+        f"/api/v1/admin/contacts/{msg.id}",
+        json={"deleted": True, "read": False},
+    )
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
+
+def test_admin_contacts_patch_validation_extra_field(
+    client, admin_user, db_session
+):
+    """Extra keys in the PATCH body are rejected (422)."""
+    msg = _run(seed_contact(db_session))
+    _login(client)
+    r = client.patch(
+        f"/api/v1/admin/contacts/{msg.id}",
+        json={"deleted": False, "read": False, "name": "newname"},
+    )
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "validation_error"
+
+
+def test_admin_contacts_delete_permanent(client, admin_user, db_session):
+    """DELETE removes the row entirely; subsequent GETs 404."""
+    msg = _run(seed_contact(db_session, email="perm@example.com", name="Perm"))
+    _login(client)
+    r = client.delete(f"/api/v1/admin/contacts/{msg.id}")
+    assert r.status_code == 204
+    # The row is gone from both the inbox and the trash.
+    inbox = client.get("/api/v1/admin/contacts").json()["data"]
+    trash = client.get("/api/v1/admin/contacts/trash").json()["data"]
+    assert "perm@example.com" not in [m["email"] for m in inbox + trash]
+
+
+def test_admin_contacts_delete_not_found(client, admin_user, db_session):
+    """DELETE on a missing id returns 404."""
+    _login(client)
+    r = client.delete(
+        "/api/v1/admin/contacts/00000000-0000-0000-0000-000000000000"
+    )
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "not_found"
+
+
+def test_admin_contacts_delete_requires_auth(client, admin_user, db_session):
+    """DELETE without cookie is 401."""
+    msg = _run(seed_contact(db_session))
+    r = client.delete(f"/api/v1/admin/contacts/{msg.id}")
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
