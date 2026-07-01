@@ -1,15 +1,26 @@
-"""Admin read+list endpoints: 401 (no auth) and 200 (with auth).
+"""Admin endpoints: 401 (no auth) and 200 (with auth).
+
+This module covers both the read+list surface (PR #2) and the
+write surface added in PR #6 (POST/PUT/DELETE on projects, blog,
+resume; PATCH on contacts; image upload; dashboard counts).
 
 Mandatory tests (per the orchestrator's brief):
 - 401 with `unauthorized` envelope on missing/invalid auth.
 - 200 with envelope on valid JWT (cookie) for each list endpoint.
+- 201 / 200 / 204 with envelope on valid CRUD requests.
+- 404 on not-found.
+- 422 on missing required fields (LocalizedStr.es).
+- Slug dedup: a second create with the same title gets `-2`.
 
-Endpoints covered (PR #2 scope: read+list only):
-- GET /api/v1/admin/projects
-- GET /api/v1/admin/blog
-- GET /api/v1/admin/contacts
-- GET /api/v1/admin/contacts/trash
-- GET /api/v1/admin/resume
+Endpoints covered:
+- GET /api/v1/admin/projects         (PR #2)
+- POST /api/v1/admin/projects        (PR #6)
+- PUT /api/v1/admin/projects/{id}    (PR #6)
+- DELETE /api/v1/admin/projects/{id} (PR #6)
+- GET /api/v1/admin/blog             (PR #2)
+- GET /api/v1/admin/contacts         (PR #2)
+- GET /api/v1/admin/contacts/trash   (PR #2)
+- GET /api/v1/admin/resume           (PR #2)
 """
 
 import asyncio
@@ -279,3 +290,224 @@ def test_admin_resume_returns_raw_markdown_description(
     # No HTML tags from the sanitizer.
     assert "<strong>" not in desc["es"]
     assert "<em>" not in desc["es"]
+
+
+# ---------------------------------------------------------------------------
+# Project CRUD (PR #6)
+#
+# The 5-step flow per the orchestrator's brief:
+# 1. Create admin user (via `admin_user` fixture).
+# 2. POST /api/v1/auth/login (sets the cookie).
+# 3. POST /api/v1/admin/projects (create).
+# 4. Assert 201, envelope shape, and the slug is what we expect.
+# 5. Repeat for PUT and DELETE.
+# ---------------------------------------------------------------------------
+
+
+def _project_create_payload(**overrides) -> dict:
+    base = {
+        "title": {"es": "Mi Proyecto Nuevo", "en": "My New Project"},
+        "description": {"es": "Descripcion del proyecto", "en": "Project description"},
+        "technologies": [{"es": "Python", "en": "Python"}],
+        "tags": ["python", "data"],
+        "image_url": None,
+        "github_url": None,
+        "demo_url": None,
+        "is_visible": True,
+    }
+    base.update(overrides)
+    return base
+
+
+def test_admin_projects_create_success(client, admin_user, db_session):
+    """POST /api/v1/admin/projects returns 201 with the new row."""
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/projects",
+        json=_project_create_payload(),
+    )
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["error"] is None
+    item = body["data"]
+    # Server-generated fields
+    assert isinstance(item["id"], str) and item["id"]
+    assert item["slug"] == "mi-proyecto-nuevo"
+    assert item["is_visible"] is True
+    # LocalizedStr preserved
+    assert item["title"]["es"] == "Mi Proyecto Nuevo"
+    assert item["title"]["en"] == "My New Project"
+    assert item["description"]["es"] == "Descripcion del proyecto"
+    assert item["tags"] == ["python", "data"]
+
+
+def test_admin_projects_create_requires_auth(client, admin_user, db_session):
+    """POST without cookie is 401."""
+    r = client.post(
+        "/api/v1/admin/projects",
+        json=_project_create_payload(),
+    )
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
+
+def test_admin_projects_create_dedupes_slug(client, admin_user, db_session):
+    """Two creates with the same title get slugs `foo` and `foo-2`."""
+    _login(client)
+    r1 = client.post(
+        "/api/v1/admin/projects",
+        json=_project_create_payload(),
+    )
+    assert r1.status_code == 201
+    slug1 = r1.json()["data"]["slug"]
+    assert slug1 == "mi-proyecto-nuevo"
+
+    r2 = client.post(
+        "/api/v1/admin/projects",
+        json=_project_create_payload(),
+    )
+    assert r2.status_code == 201
+    slug2 = r2.json()["data"]["slug"]
+    assert slug2 == "mi-proyecto-nuevo-2"
+    assert slug1 != slug2
+
+
+def test_admin_projects_create_dedupes_third(client, admin_user, db_session):
+    """Three creates with the same title get slugs `foo`, `foo-2`, `foo-3`."""
+    _login(client)
+    slugs = []
+    for _ in range(3):
+        r = client.post(
+            "/api/v1/admin/projects",
+            json=_project_create_payload(),
+        )
+        assert r.status_code == 201
+        slugs.append(r.json()["data"]["slug"])
+    assert slugs == ["mi-proyecto-nuevo", "mi-proyecto-nuevo-2", "mi-proyecto-nuevo-3"]
+
+
+def test_admin_projects_create_falls_back_to_en_slug(
+    client, admin_user, db_session
+):
+    """If `es` slugifies to empty, the server falls back to `en`."""
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/projects",
+        json=_project_create_payload(
+            title={"es": "", "en": "Fallback English Title"}
+        ),
+    )
+    # The empty `es` is rejected at validation (LocalizedStr.es required).
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "validation_error"
+
+
+def test_admin_projects_create_validation_missing_es(
+    client, admin_user, db_session
+):
+    """LocalizedStr.es is required — 422 with validation_error."""
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/projects",
+        json=_project_create_payload(title={"es": "", "en": "x"}),
+    )
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "validation_error"
+
+
+def test_admin_projects_create_validation_extra_field(
+    client, admin_user, db_session
+):
+    """`extra=forbid` rejects unknown fields with 422."""
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/projects",
+        json={**_project_create_payload(), "extra_field": "nope"},
+    )
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "validation_error"
+
+
+def test_admin_projects_update_success(client, admin_user, db_session):
+    """PUT replaces the row and updates `updated_at` + `slug` stays put."""
+    created = _run(seed_project(db_session, slug="original", is_visible=True))
+    _login(client)
+    r = client.put(
+        f"/api/v1/admin/projects/{created.id}",
+        json=_project_create_payload(
+            title={"es": "Renombrado", "en": "Renamed"},
+            is_visible=False,
+        ),
+    )
+    assert r.status_code == 200, r.text
+    item = r.json()["data"]
+    # slug preserved (PUT does NOT regenerate the public identifier)
+    assert item["slug"] == "original"
+    assert item["title"]["es"] == "Renombrado"
+    assert item["is_visible"] is False
+
+
+def test_admin_projects_update_not_found(client, admin_user, db_session):
+    """PUT on a missing id returns 404."""
+    _login(client)
+    r = client.put(
+        "/api/v1/admin/projects/00000000-0000-0000-0000-000000000000",
+        json=_project_create_payload(),
+    )
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "not_found"
+
+
+def test_admin_projects_update_requires_auth(client, admin_user, db_session):
+    """PUT without cookie is 401."""
+    created = _run(seed_project(db_session))
+    r = client.put(
+        f"/api/v1/admin/projects/{created.id}",
+        json=_project_create_payload(),
+    )
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
+
+def test_admin_projects_update_validation_missing_es(
+    client, admin_user, db_session
+):
+    """PUT with invalid LocalizedStr.es is 422."""
+    created = _run(seed_project(db_session))
+    _login(client)
+    r = client.put(
+        f"/api/v1/admin/projects/{created.id}",
+        json=_project_create_payload(title={"es": "", "en": "x"}),
+    )
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "validation_error"
+
+
+def test_admin_projects_delete_success(client, admin_user, db_session):
+    """DELETE removes the row and 204s; subsequent GET 404s."""
+    created = _run(seed_project(db_session, slug="deleteme"))
+    _login(client)
+    r = client.delete(f"/api/v1/admin/projects/{created.id}")
+    assert r.status_code == 204
+    # The row is gone: a follow-up list does not include it.
+    r2 = client.get("/api/v1/admin/projects")
+    assert r2.status_code == 200
+    slugs = [p["slug"] for p in r2.json()["data"]]
+    assert "deleteme" not in slugs
+
+
+def test_admin_projects_delete_not_found(client, admin_user, db_session):
+    """DELETE on a missing id returns 404."""
+    _login(client)
+    r = client.delete("/api/v1/admin/projects/00000000-0000-0000-0000-000000000000")
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "not_found"
+
+
+def test_admin_projects_delete_requires_auth(client, admin_user, db_session):
+    """DELETE without cookie is 401."""
+    created = _run(seed_project(db_session))
+    r = client.delete(f"/api/v1/admin/projects/{created.id}")
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+

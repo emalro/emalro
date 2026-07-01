@@ -1,8 +1,13 @@
-"""Pydantic schemas for the admin read+list surface (PR #2).
+"""Pydantic schemas for the admin read+list surface (PR #2) and
+the admin write surface (PR #6).
 
-PR #2 ships read+list only. Full CRUD (POST/PUT/DELETE) lands in
-PR #6. The shapes here match what the admin list views consume
-in PR #6: same field set, so the FE migration is trivial.
+PR #2 ships read+list only. PR #6 adds full CRUD (POST/PUT/DELETE
+on projects, blog, resume), PATCH on contacts (trash/restore/read
+toggle + permanent delete), image upload + delete, and the
+dashboard counts endpoint. The shapes here match what the admin
+list views consume; the FE migration is trivial because the list
+shape is unchanged and the create/update request bodies are
+direct mirrors of the corresponding response shapes.
 """
 
 from __future__ import annotations
@@ -87,3 +92,51 @@ class AdminResumeEntry(BaseModel):
     extra: dict = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Project CRUD (PR #6)
+# ---------------------------------------------------------------------------
+
+
+class AdminProjectCreateRequest(BaseModel):
+    """Create body for `POST /admin/projects`.
+
+    `id`, `slug`, `created_at`, `updated_at` are server-generated.
+    `slug` is derived from `title.es` (falling back to `title.en`)
+    and deduped with a `-2`, `-3`, ... suffix on conflict.
+    `technologies` is a list of `LocalizedStr` (mirrors the public
+    `ProjectResponse` shape). The server stores the title/description/
+    technologies as JSON-encoded strings on the `Project` row.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: LocalizedStr
+    description: LocalizedStr
+    technologies: list[LocalizedStr] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    image_url: Optional[str] = Field(default=None, max_length=500)
+    github_url: Optional[str] = Field(default=None, max_length=500)
+    demo_url: Optional[str] = Field(default=None, max_length=500)
+    is_visible: bool = True
+
+
+class AdminProjectUpdateRequest(BaseModel):
+    """Update body for `PUT /admin/projects/{id}`.
+
+    The full set of editable fields is required (PUT = full replace).
+    `slug` is not editable in PR #6 (the slug is the public identifier;
+    re-slugging is out of scope for the v1 admin).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: LocalizedStr
+    description: LocalizedStr
+    technologies: list[LocalizedStr] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    image_url: Optional[str] = Field(default=None, max_length=500)
+    github_url: Optional[str] = Field(default=None, max_length=500)
+    demo_url: Optional[str] = Field(default=None, max_length=500)
+    is_visible: bool = True
