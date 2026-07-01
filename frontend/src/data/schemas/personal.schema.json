@@ -33,6 +33,11 @@
       "items": {
         "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
       }
+    },
+    "contact_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Public contact email used by the noscript fallback on the /contact page."
     }
   },
   "additionalProperties": false
