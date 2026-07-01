@@ -1,0 +1,35 @@
+[
+  {
+    "slug": "hello-world",
+    "title": { "es": "Hola mundo", "en": "Hello world" },
+    "excerpt": {
+      "es": "Mi primer post en el blog. Una intro al stack del portfolio.",
+      "en": "My first blog post. A quick intro to the portfolio stack."
+    },
+    "content": {
+      "es": "# Hola mundo\n\nBienvenido a mi blog. Este es el **primer** post, donde te cuento un poco cómo está armado el portfolio.\n\nEl stack tiene tres capas:\n\n- **Storage**: Supabase (Postgres + Storage)\n- **API**: FastAPI con JWT\n- **Frontend**: Astro 4 con build-time fetch\n\n```bash\ncurl http://localhost:8000/api/v1/blog\n```\n\nSi querés ver el código, el repo está en GitHub.\n",
+      "en": "# Hello world\n\nWelcome to my blog. This is the **first** post, where I walk through how the portfolio is built.\n\nThe stack has three layers:\n\n- **Storage**: Supabase (Postgres + Storage)\n- **API**: FastAPI with JWT\n- **Frontend**: Astro 4 with build-time fetch\n\n```bash\ncurl http://localhost:8000/api/v1/blog\n```\n\nSource is on GitHub.\n"
+    },
+    "tags": ["intro", "welcome"],
+    "is_visible": true,
+    "published_at": "2026-06-15T00:00:00Z"
+  },
+  {
+    "slug": "data-pipeline-overview",
+    "title": {
+      "es": "Visión general del data pipeline",
+      "en": "Data pipeline overview"
+    },
+    "excerpt": {
+      "es": "Cómo conecto Supabase, FastAPI y Astro para servir contenido bilingüe.",
+      "en": "How I wire Supabase, FastAPI and Astro to serve bilingual content."
+    },
+    "content": {
+      "es": "# Data pipeline\n\nEl pipeline tiene 3 capas. Cada una es responsable de una cosa:\n\n1. **Supabase Postgres** — fuente de verdad. Todo el contenido vive acá, con shape `{\"es\": \"...\", \"en\": \"...\"}` para los campos bilingües.\n2. **FastAPI** — envuelve la DB y expone los endpoints públicos (`/api/v1/blog`, `/api/v1/cv`, etc.) con envelope `{ data, error }`.\n3. **Astro 4** — hace build-time fetch del backend y genera HTML estático por slug.\n\n```sql\nSELECT slug, title FROM blog_posts WHERE is_visible = true;\n```\n\nEl resultado: el sitio es estático (lo puede servir cualquier CDN) pero el contenido se maneja desde la DB.\n",
+      "en": "# Data pipeline\n\nThe pipeline has 3 layers. Each one owns a single concern:\n\n1. **Supabase Postgres** — source of truth. All content lives here, with a `{\"es\": \"...\", \"en\": \"...\"}` shape for bilingual fields.\n2. **FastAPI** — wraps the DB and exposes the public endpoints (`/api/v1/blog`, `/api/v1/cv`, etc.) with an `{ data, error }` envelope.\n3. **Astro 4** — does a build-time fetch from the backend and emits static HTML per slug.\n\n```sql\nSELECT slug, title FROM blog_posts WHERE is_visible = true;\n```\n\nThe result: the site is static (any CDN can serve it) but the content is managed from the DB.\n"
+    },
+    "tags": ["architecture", "fastapi", "astro"],
+    "is_visible": true,
+    "published_at": "2026-06-22T00:00:00Z"
+  }
+]
