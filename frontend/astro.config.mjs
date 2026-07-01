@@ -17,4 +17,19 @@ export default defineConfig({
     // hydrates client-side via `client:load`).
     preact(),
   ],
+  // The admin SPA (PR #5b) uses shadcn/ui components which are
+  // written for React (`import * as React from "react"`). We
+  // alias `react` and `react-dom` to `preact/compat` so the shadcn
+  // source resolves to Preact at build time, keeping the admin
+  // bundle small (Preact 3 KB gzipped vs React 45 KB). The same
+  // alias is mirrored in tsconfig.json's `paths` for the editor.
+  vite: {
+    resolve: {
+      alias: {
+        react: "preact/compat",
+        "react-dom": "preact/compat",
+        "react/jsx-runtime": "preact/jsx-runtime",
+      },
+    },
+  },
 });
