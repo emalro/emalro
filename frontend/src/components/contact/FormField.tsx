@@ -1,5 +1,6 @@
 /** @jsxImportSource preact */
-import type { JSX } from "preact";
+import type { JSX, Ref } from "preact";
+import { forwardRef } from "preact/compat";
 import { useId } from "preact/hooks";
 import { resolveLabel, type ContactErrorLabels } from "./i18n";
 import type { LocalizedStr } from "../../types/content";
@@ -18,6 +19,12 @@ import type { LocalizedStr } from "../../types/content";
  * with a `> ` prompt character (matching the data-terminal aesthetic
  * described in the MVP spec). The input itself is a single-line
  * monospaced field, slate-on-slate, with an amber focus ring.
+ *
+ * The component forwards a ref to the inner `<input>` or
+ * `<textarea>`, so the parent (`ContactForm`) can move focus to the
+ * first invalid field after a failed submit. The ref type is
+ * discriminated on `multiline`: `HTMLInputElement` for single-line
+ * fields, `HTMLTextAreaElement` for the message box.
  *
  * Props are stable references on the parent (`ContactForm.tsx`),
  * so this component renders cheaply without memoization.
@@ -67,7 +74,15 @@ export interface FormFieldProps {
   autoFocus?: boolean;
 }
 
-export function FormField(props: FormFieldProps): JSX.Element {
+/**
+ * `forwardRef` from `preact/compat` mirrors React's API. The
+ * ref type is `HTMLInputElement | HTMLTextAreaElement` because the
+ * underlying element depends on the `multiline` flag.
+ */
+export const FormField = forwardRef<
+  HTMLInputElement | HTMLTextAreaElement,
+  FormFieldProps
+>(function FormField(props, ref): JSX.Element {
   const {
     name,
     label,
@@ -123,6 +138,11 @@ export function FormField(props: FormFieldProps): JSX.Element {
   // voice consistent with the rest of the form.
   const errorClasses = "font-mono text-xs text-error";
 
+  // The forwarded ref is typed as `Ref<HTMLInputElement | HTMLTextAreaElement>`.
+  // We narrow it to the specific element type per branch.
+  const inputRef = ref as Ref<HTMLInputElement>;
+  const textareaRef = ref as Ref<HTMLTextAreaElement>;
+
   return (
     <div class="grid gap-1.5">
       <label htmlFor={inputId} class={labelClasses}>
@@ -149,6 +169,7 @@ export function FormField(props: FormFieldProps): JSX.Element {
           autoFocus={autoFocus}
           placeholder={placeholder}
           class={fieldClasses}
+          ref={textareaRef}
         />
       ) : (
         <input
@@ -171,6 +192,7 @@ export function FormField(props: FormFieldProps): JSX.Element {
                 ? "name"
                 : "off"
           }
+          ref={inputRef}
         />
       )}
       {errorText && (
@@ -181,4 +203,4 @@ export function FormField(props: FormFieldProps): JSX.Element {
       )}
     </div>
   );
-}
+});

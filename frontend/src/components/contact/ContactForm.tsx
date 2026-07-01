@@ -304,6 +304,7 @@ export function ContactForm(
 
       <div class="grid gap-5 sm:grid-cols-2">
         <FormField
+          ref={nameRef}
           name="name"
           label={contactLabels.fields.name}
           lang={lang}
@@ -316,6 +317,7 @@ export function ContactForm(
           autoFocus
         />
         <FormField
+          ref={emailRef}
           name="email"
           label={contactLabels.fields.email}
           lang={lang}
@@ -329,6 +331,7 @@ export function ContactForm(
         />
       </div>
       <FormField
+        ref={subjectRef}
         name="subject"
         label={contactLabels.fields.subject}
         lang={lang}
@@ -339,6 +342,7 @@ export function ContactForm(
         maxLength={SUBJECT_MAX}
       />
       <FormField
+        ref={messageRef}
         name="message"
         label={contactLabels.fields.message}
         lang={lang}
