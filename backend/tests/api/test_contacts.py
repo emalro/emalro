@@ -117,7 +117,11 @@ def test_post_contacts_honeypot_returns_400(client):
     )
     assert r.status_code == 400
     body = r.json()
-    assert body["error"]["code"] == "honeypot_triggered"
+    # The 400 envelope uses the generic `bad_request` code on purpose:
+    # leaking `honeypot_triggered` would let attackers fingerprint the
+    # defense. The frontend collapses every non-429 4xx into the same
+    # banner so UX is unchanged.
+    assert body["error"]["code"] == "bad_request"
 
 
 def test_post_contacts_honeypot_does_not_persist(client, db_session):
@@ -133,6 +137,50 @@ def test_post_contacts_honeypot_does_not_persist(client, db_session):
         select(ContactMessage).where(ContactMessage.email == "bot@example.com")
     )).scalars().all()
     assert len(rows) == 0
+
+
+def test_post_contacts_honeypot_whitespace_only_returns_400(client, db_session):
+    """R3-C2: a single space must NOT bypass the honeypot.
+
+    The previous `payload.website and payload.website.strip()` check
+    short-circuited on a truthy non-None string, so `"   "` (truthy
+    but strips to empty) was treated as a real user and got persisted.
+    The fix uses `is not None and .strip()` so whitespace is correctly
+    rejected.
+    """
+    from sqlmodel import select
+
+    from app.models.contact import ContactMessage
+
+    r = client.post(
+        "/api/v1/contacts",
+        json=_valid_payload(website="   ", email="ws@example.com"),
+    )
+    assert r.status_code == 400
+    body = r.json()
+    assert body["error"]["code"] == "bad_request"
+
+    rows = asyncio_run(db_session.execute(
+        select(ContactMessage).where(ContactMessage.email == "ws@example.com")
+    )).scalars().all()
+    assert len(rows) == 0
+
+
+def test_post_contacts_honeypot_empty_string_accepted(client):
+    """An empty `website` (the default) is NOT a bot signal."""
+    r = client.post(
+        "/api/v1/contacts",
+        json=_valid_payload(website=""),
+    )
+    assert r.status_code == 201
+
+
+def test_post_contacts_honeypot_missing_field_accepted(client):
+    """An omitted `website` is NOT a bot signal."""
+    payload = _valid_payload()
+    payload.pop("website", None)
+    r = client.post("/api/v1/contacts", json=payload)
+    assert r.status_code == 201
 
 
 # ---------------------------------------------------------------------------
@@ -214,9 +262,9 @@ def test_post_contacts_6th_in_hour_returns_429():
         response: Response,
         session: AsyncSession = Depends(fresh_session_dep),
     ):
-        if payload.website and payload.website.strip():
+        if payload.website is not None and payload.website.strip():
             from fastapi import HTTPException
-            raise HTTPException(status_code=400, detail="honeypot_triggered")
+            raise HTTPException(status_code=400, detail="bad_request")
         row = ContactMessage(
             name=payload.name,
             email=str(payload.email).lower(),
@@ -246,7 +294,7 @@ def test_post_contacts_6th_in_hour_returns_429():
         valid_codes = {
             "invalid_credentials", "token_expired", "unauthorized", "forbidden",
             "not_found", "validation_error", "rate_limited", "file_too_large",
-            "unsupported_media_type", "honeypot_triggered", "invalid_parameter",
+            "unsupported_media_type", "bad_request", "invalid_parameter",
             "server_error",
         }
         code_map = {
