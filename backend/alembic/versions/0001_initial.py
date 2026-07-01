@@ -19,10 +19,16 @@ creates:
 - ``contact_messages`` (PR #2): contact-form submissions with
   read_at / deleted_at timestamps for the inbox / trash lifecycle.
 
-GIN indexes on ``projects.tags`` and ``blog_posts.tags`` are
-required for the ``/api/v1/explore`` tag-filter query. GIN is
-Postgres-specific, so the migration checks the dialect and skips
-the GIN index on SQLite (used in tests).
+Note: the GIN indexes on ``projects.tags`` and ``blog_posts.tags``
+that the design originally specified are NOT created here. The
+``tags`` column is a JSON-serialized ``String`` (the SQLModel stores
+``list[str]`` as ``str`` with ``json.dumps`` for cross-dialect
+compatibility), and the ``/api/v1/explore`` endpoint filters with
+``LIKE`` on the JSON text — not with a GIN-compatible operator.
+A proper GIN index requires migrating ``tags`` to ``JSONB`` or
+``text[]``, which is deferred to a Fase 3 cleanup PR. For Fase 2
+scale, the full scan with ``LIKE`` is acceptable. See the
+``api-public`` REQ-04 / REQ-08 in the spec index for the query plan.
 """
 
 from typing import Sequence, Union
@@ -39,9 +45,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    bind = op.get_bind()
-    is_postgres = bind.dialect.name == "postgresql"
-
     # ---------------------------------------------------------------------------
     # admin_users (carried forward from PR #1)
     # ---------------------------------------------------------------------------
@@ -76,11 +79,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_projects_slug", "projects", ["slug"], unique=True)
     op.create_index("ix_projects_is_visible", "projects", ["is_visible"])
-    if is_postgres:
-        op.execute(
-            "CREATE INDEX IF NOT EXISTS ix_projects_tags "
-            "ON projects USING gin (tags jsonb_path_ops)"
-        )
+    # NOTE: GIN index on projects.tags deferred (see docstring at top of file).
 
     # ---------------------------------------------------------------------------
     # blog_posts
@@ -101,11 +100,7 @@ def upgrade() -> None:
     op.create_index("ix_blog_posts_slug", "blog_posts", ["slug"], unique=True)
     op.create_index("ix_blog_posts_is_visible", "blog_posts", ["is_visible"])
     op.create_index("ix_blog_posts_published_at", "blog_posts", ["published_at"])
-    if is_postgres:
-        op.execute(
-            "CREATE INDEX IF NOT EXISTS ix_blog_posts_tags "
-            "ON blog_posts USING gin (tags jsonb_path_ops)"
-        )
+    # NOTE: GIN index on blog_posts.tags deferred (see docstring at top of file).
 
     # ---------------------------------------------------------------------------
     # resume_data
@@ -164,10 +159,7 @@ def downgrade() -> None:
     op.drop_index("ix_resume_data_section", table_name="resume_data")
     op.drop_table("resume_data")
 
-    bind = op.get_bind()
-    if bind.dialect.name == "postgresql":
-        op.execute("DROP INDEX IF EXISTS ix_blog_posts_tags")
-        op.execute("DROP INDEX IF EXISTS ix_projects_tags")
+    # NOTE: No GIN indexes to drop on blog_posts.tags or projects.tags (see docstring at top of file).
     op.drop_index("ix_blog_posts_published_at", table_name="blog_posts")
     op.drop_index("ix_blog_posts_is_visible", table_name="blog_posts")
     op.drop_index("ix_blog_posts_slug", table_name="blog_posts")
