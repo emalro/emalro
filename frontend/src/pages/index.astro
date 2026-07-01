@@ -5,6 +5,34 @@ import Experience from "../components/sections/Experience.astro";
 import Education from "../components/sections/Education.astro";
 import Projects from "../components/sections/Projects.astro";
 import Courses from "../components/sections/Courses.astro";
+import BlogList from "../components/blog/BlogList.astro";
+import { api } from "../lib/api";
+import type { BlogPostSummary, PaginatedResponse } from "../lib/api";
+
+/**
+ * Homepage (per `blog-section` REQ-blog-section-01 partial +
+ * `data-pipeline` REQ-data-pipeline-01).
+ *
+ * The non-blog sections (Hero/Experience/Education/Projects/Courses)
+ * still consume the static JSON files. The blog teaser at the
+ * bottom fetches `GET /api/v1/blog?limit=3` at build time and shows
+ * the three most recent posts. This is the only data-driven section
+ * in PR #3; the full migration of all sections to the API is out of
+ * scope for this PR (per the orchestrator's brief: only the blog
+ * switches to API in PR #3, admin in PR #5, contact in PR #4).
+ *
+ * Build-time fetch is the SEO choice: the static HTML payload
+ * already contains the rendered post titles + dates, so search
+ * engines see them without executing JavaScript.
+ */
+const response: PaginatedResponse<BlogPostSummary> = await api.blog({
+  limit: 3,
+});
+const posts: BlogPostSummary[] = response.data ?? [];
+const lang = "es" as "es" | "en";
+const eyebrow = "// 04";
+const heading = lang === "en" ? "Latest posts" : "Posts recientes";
+const ctaLabel = lang === "en" ? "View all posts" : "Ver todos los posts";
 ---
 
 <Layout>
@@ -13,4 +41,15 @@ import Courses from "../components/sections/Courses.astro";
   <Education />
   <Projects />
   <Courses />
+  <BlogList posts={posts} lang={lang} eyebrow={eyebrow} heading={heading} limit={3} />
+  {posts.length > 0 && (
+    <p class="-mt-4 pb-16 text-sm md:pb-24">
+      <a
+        href="/blog"
+        class="font-mono text-accent hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
+      >
+        {ctaLabel} →
+      </a>
+    </p>
+  )}
 </Layout>

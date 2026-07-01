@@ -1,0 +1,30 @@
+{
+  "$id": "blog.schema.json",
+  "type": "object",
+  "required": ["title", "content"],
+  "properties": {
+    "title": {
+      "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+    },
+    "content": {
+      "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+    },
+    "excerpt": {
+      "$ref": "i18n-shape.schema.json#/definitions/LocalizedStr"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "slug": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

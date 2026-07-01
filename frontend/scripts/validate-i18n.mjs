@@ -41,6 +41,36 @@ const FILE_TO_SCHEMA = {
   "social.json": "social.schema.json",
 };
 
+/**
+ * Schemas that are registered with the Ajv instance and self-tested
+ * with a canonical sample, even when no matching data file exists
+ * in `src/data/`. The blog schema lives in this group because blog
+ * content is dynamic (DB-driven via Fase 2's public API) and won't
+ * be committed as a static JSON file — but the schema itself is
+ * part of the i18n-shape contract and must be exercised at every
+ * build per `i18n-shape` REQ-i18n-shape-06.
+ */
+const STANDALONE_SCHEMAS = ["blog.schema.json"];
+
+/**
+ * Canonical samples for the standalone schemas. Each sample is a
+ * minimal valid instance that proves the schema compiles, accepts
+ * a LocalizedStr on every localizable field, and rejects drift.
+ */
+const STANDALONE_SAMPLES = {
+  "blog.schema.json": {
+    title: { es: "Hola mundo", en: "Hello world" },
+    content: {
+      es: "# Hola\n\nBienvenido al blog.",
+      en: "# Hello\n\nWelcome to the blog.",
+    },
+    excerpt: { es: "Hola", en: "Hello" },
+    tags: ["data", "python"],
+    slug: "hello-world",
+    published_at: "2026-06-30T10:00:00Z",
+  },
+};
+
 function jsonPointer(path) {
   if (!path) return "#";
   return "#/" + path.replace(/\./g, "/");
@@ -132,7 +162,55 @@ async function main() {
     );
     process.exit(1);
   }
-  console.log(`\nvalidate-i18n: ${dataFiles.length} file(s) OK.`);
+
+  // Self-test the standalone schemas (blog, etc.) against their
+  // canonical samples. This proves the schema compiles and the
+  // i18n-shape references resolve correctly at every build.
+  for (const schemaFile of STANDALONE_SCHEMAS) {
+    const schemaRaw = await readFile(join(SCHEMAS_DIR, schemaFile), "utf8");
+    let schema;
+    try {
+      schema = JSON.parse(schemaRaw);
+      delete schema.$schema;
+    } catch (err) {
+      console.error(`✗ ${schemaFile}: invalid JSON (${err.message})`);
+      totalErrors++;
+      continue;
+    }
+    let validate;
+    try {
+      validate = ajv.compile(schema);
+    } catch (err) {
+      console.error(
+        `✗ ${schemaFile}: schema compile error (${err.message})`,
+      );
+      totalErrors++;
+      continue;
+    }
+    const sample = STANDALONE_SAMPLES[schemaFile];
+    if (validate(sample)) {
+      console.log(`✓ ${schemaFile} (sample)`);
+      continue;
+    }
+    console.error(
+      `✗ ${schemaFile} (sample) (${validate.errors.length} violation(s))`,
+    );
+    for (const err of validate.errors) {
+      const pointer = jsonPointer(err.instancePath);
+      console.error(`    ${pointer}  ${err.message}`);
+    }
+    totalErrors++;
+  }
+
+  if (totalErrors > 0) {
+    console.error(
+      `\nvalidate-i18n: ${totalErrors} check(s) failed. ` +
+        `Wrap plain strings in { "es": "...", "en": "..." }.`,
+    );
+    process.exit(1);
+  }
+  const totalChecked = dataFiles.length + STANDALONE_SCHEMAS.length;
+  console.log(`\nvalidate-i18n: ${totalChecked} check(s) OK.`);
 }
 
 main().catch((err) => {
