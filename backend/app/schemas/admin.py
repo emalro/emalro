@@ -177,3 +177,84 @@ class AdminBlogUpdateRequest(BaseModel):
     tags: list[str] = Field(default_factory=list)
     is_visible: bool = True
     published_at: Optional[datetime] = None
+
+
+# ---------------------------------------------------------------------------
+# Resume CRUD (PR #6)
+#
+# `ResumeData` is the most complex model in the schema (free-form
+# `extra` JSON, section-based grouping, `display_order` for sort).
+# The create/update request accepts the full editable set. The
+# reorder endpoint takes a list of {id, display_order} pairs and
+# updates them in a single transaction.
+# ---------------------------------------------------------------------------
+
+
+class AdminResumeCreateRequest(BaseModel):
+    """Create body for `POST /admin/resume`.
+
+    `display_order` is optional; when omitted, the server picks
+    `max(display_order) + 1` in the same section (so a new
+    experience row lands at the end of the section's list).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    section: str = Field(..., min_length=1, max_length=32)
+    display_order: Optional[int] = None
+    title: LocalizedStr
+    subtitle: Optional[str] = Field(default=None, max_length=200)
+    description: Optional[LocalizedStr] = None
+    start_date: Optional[str] = Field(default=None, max_length=7)
+    end_date: Optional[str] = Field(default=None, max_length=7)
+    url: Optional[str] = Field(default=None, max_length=500)
+    image_url: Optional[str] = Field(default=None, max_length=500)
+    tags: list[str] = Field(default_factory=list)
+    is_visible: bool = True
+    extra: dict = Field(default_factory=dict)
+
+
+class AdminResumeUpdateRequest(BaseModel):
+    """Update body for `PUT /admin/resume/{id}` (full replace).
+
+    `section` is editable in v1 (the operator may move a row from
+    `experience` to `course`, for example). `display_order` is
+    editable too — for bulk reordering the FE should call the
+    dedicated `POST /admin/resume/reorder` endpoint instead.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    section: str = Field(..., min_length=1, max_length=32)
+    display_order: int = 0
+    title: LocalizedStr
+    subtitle: Optional[str] = Field(default=None, max_length=200)
+    description: Optional[LocalizedStr] = None
+    start_date: Optional[str] = Field(default=None, max_length=7)
+    end_date: Optional[str] = Field(default=None, max_length=7)
+    url: Optional[str] = Field(default=None, max_length=500)
+    image_url: Optional[str] = Field(default=None, max_length=500)
+    tags: list[str] = Field(default_factory=list)
+    is_visible: bool = True
+    extra: dict = Field(default_factory=dict)
+
+
+class AdminResumeReorderItem(BaseModel):
+    """A single (id, display_order) pair in the reorder payload."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    display_order: int = Field(..., ge=0)
+
+
+class AdminResumeReorderRequest(BaseModel):
+    """Body for `POST /admin/resume/reorder`.
+
+    The list is processed in a single transaction; on any error
+    the entire reorder is rolled back.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    order: list[AdminResumeReorderItem] = Field(..., min_length=1)

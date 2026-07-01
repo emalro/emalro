@@ -869,3 +869,270 @@ def test_admin_contacts_delete_requires_auth(client, admin_user, db_session):
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "unauthorized"
 
+
+# ---------------------------------------------------------------------------
+# Resume CRUD + reorder (PR #6)
+# ---------------------------------------------------------------------------
+
+
+def _resume_create_payload(**overrides) -> dict:
+    base = {
+        "section": "experience",
+        "display_order": None,
+        "title": {"es": "Data Analyst", "en": "Data Analyst"},
+        "subtitle": "Acme Corp",
+        "description": {"es": "Descripcion", "en": "Description"},
+        "start_date": "2024-01",
+        "end_date": None,
+        "url": None,
+        "image_url": None,
+        "tags": ["python"],
+        "is_visible": True,
+        "extra": {},
+    }
+    base.update(overrides)
+    return base
+
+
+def test_admin_resume_create_success(client, admin_user, db_session):
+    """POST /api/v1/admin/resume returns 201 with the new row."""
+    _login(client)
+    r = client.post("/api/v1/admin/resume", json=_resume_create_payload())
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["error"] is None
+    item = body["data"]
+    assert isinstance(item["id"], str) and item["id"]
+    assert item["section"] == "experience"
+    assert item["title"]["es"] == "Data Analyst"
+    # No other rows in the section, so display_order defaults to 1.
+    assert item["display_order"] == 1
+
+
+def test_admin_resume_create_explicit_display_order(
+    client, admin_user, db_session
+):
+    """If `display_order` is supplied, the server keeps it."""
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/resume",
+        json=_resume_create_payload(display_order=5),
+    )
+    assert r.status_code == 201
+    assert r.json()["data"]["display_order"] == 5
+
+
+def test_admin_resume_create_appends_to_section(client, admin_user, db_session):
+    """A second row in the same section lands at max(display_order)+1."""
+    _run(seed_resume_experience(db_session, organization="First", display_order=3))
+    _login(client)
+    r = client.post("/api/v1/admin/resume", json=_resume_create_payload())
+    assert r.status_code == 201
+    assert r.json()["data"]["display_order"] == 4
+
+
+def test_admin_resume_create_validation_missing_es(
+    client, admin_user, db_session
+):
+    """LocalizedStr.es is required (422)."""
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/resume",
+        json=_resume_create_payload(title={"es": "", "en": "x"}),
+    )
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "validation_error"
+
+
+def test_admin_resume_create_validation_empty_section(
+    client, admin_user, db_session
+):
+    """`section` must be non-empty (422)."""
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/resume",
+        json=_resume_create_payload(section=""),
+    )
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "validation_error"
+
+
+def test_admin_resume_create_requires_auth(client, admin_user, db_session):
+    """POST without cookie is 401."""
+    r = client.post("/api/v1/admin/resume", json=_resume_create_payload())
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
+
+def test_admin_resume_update_success(client, admin_user, db_session):
+    """PUT replaces the row; updated_at is bumped."""
+    row = _run(seed_resume_experience(db_session, organization="Acme"))
+    _login(client)
+    r = client.put(
+        f"/api/v1/admin/resume/{row.id}",
+        json=_resume_create_payload(
+            section="course",
+            subtitle="Coursera",
+            display_order=0,
+        ),
+    )
+    assert r.status_code == 200, r.text
+    item = r.json()["data"]
+    assert item["section"] == "course"
+    assert item["subtitle"] == "Coursera"
+    assert item["display_order"] == 0
+
+
+def test_admin_resume_update_not_found(client, admin_user, db_session):
+    """PUT on a missing id returns 404."""
+    import uuid as _uuid
+    _login(client)
+    payload = _resume_create_payload()
+    # The update endpoint requires `display_order: int` (not optional).
+    payload["display_order"] = 0
+    r = client.put(
+        f"/api/v1/admin/resume/{_uuid.uuid4()}",
+        json=payload,
+    )
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "not_found"
+
+
+def test_admin_resume_update_requires_auth(client, admin_user, db_session):
+    """PUT without cookie is 401."""
+    row = _run(seed_resume_experience(db_session))
+    r = client.put(
+        f"/api/v1/admin/resume/{row.id}",
+        json=_resume_create_payload(),
+    )
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
+
+def test_admin_resume_delete_success(client, admin_user, db_session):
+    """DELETE removes the row and 204s; list reflects the change."""
+    row = _run(seed_resume_experience(db_session, organization="Doomed"))
+    _login(client)
+    r = client.delete(f"/api/v1/admin/resume/{row.id}")
+    assert r.status_code == 204
+    r2 = client.get("/api/v1/admin/resume")
+    orgs = [
+        d["subtitle"]
+        for d in r2.json()["data"]
+        if d["section"] == "experience"
+    ]
+    assert "Doomed" not in orgs
+
+
+def test_admin_resume_delete_not_found(client, admin_user, db_session):
+    """DELETE on a missing id returns 404."""
+    import uuid as _uuid
+    _login(client)
+    r = client.delete(f"/api/v1/admin/resume/{_uuid.uuid4()}")
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "not_found"
+
+
+def test_admin_resume_delete_requires_auth(client, admin_user, db_session):
+    """DELETE without cookie is 401."""
+    row = _run(seed_resume_experience(db_session))
+    r = client.delete(f"/api/v1/admin/resume/{row.id}")
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
+
+def test_admin_resume_reorder_success(client, admin_user, db_session):
+    """Reorder updates each row's `display_order` in a single transaction."""
+    a = _run(seed_resume_experience(db_session, organization="A", display_order=0))
+    b = _run(seed_resume_experience(db_session, organization="B", display_order=1))
+    c = _run(seed_resume_experience(db_session, organization="C", display_order=2))
+
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/resume/reorder",
+        json={
+            "order": [
+                {"id": a.id, "display_order": 5},
+                {"id": b.id, "display_order": 10},
+                {"id": c.id, "display_order": 1},
+            ]
+        },
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["error"] is None
+    # The response is the full updated list, sorted by section then
+    # display_order; the operator can replace their local state in
+    # one round-trip.
+    by_id = {row["id"]: row["display_order"] for row in body["data"]}
+    assert by_id[a.id] == 5
+    assert by_id[b.id] == 10
+    assert by_id[c.id] == 1
+
+    # GET /admin/resume reflects the new order.
+    r2 = client.get("/api/v1/admin/resume")
+    by_id2 = {
+        row["id"]: row["display_order"]
+        for row in r2.json()["data"]
+        if row["section"] == "experience"
+    }
+    assert by_id2[a.id] == 5
+    assert by_id2[b.id] == 10
+    assert by_id2[c.id] == 1
+
+
+def test_admin_resume_reorder_missing_id(client, admin_user, db_session):
+    """Reorder with a missing id rolls back and 404s."""
+    a = _run(seed_resume_experience(db_session, organization="A", display_order=0))
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/resume/reorder",
+        json={
+            "order": [
+                {"id": a.id, "display_order": 1},
+                {
+                    "id": "00000000-0000-0000-0000-000000000000",
+                    "display_order": 2,
+                },
+            ]
+        },
+    )
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "not_found"
+    # The existing row's display_order is unchanged (rollback).
+    r2 = client.get("/api/v1/admin/resume")
+    by_id = {
+        row["id"]: row["display_order"]
+        for row in r2.json()["data"]
+        if row["section"] == "experience"
+    }
+    assert by_id[a.id] == 0
+
+
+def test_admin_resume_reorder_duplicate_ids(client, admin_user, db_session):
+    """Duplicate ids in the payload are rejected up front (400)."""
+    a = _run(seed_resume_experience(db_session, organization="A", display_order=0))
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/resume/reorder",
+        json={
+            "order": [
+                {"id": a.id, "display_order": 1},
+                {"id": a.id, "display_order": 2},
+            ]
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "bad_request"
+
+
+def test_admin_resume_reorder_requires_auth(client, admin_user, db_session):
+    """Reorder without cookie is 401."""
+    a = _run(seed_resume_experience(db_session, organization="A"))
+    r = client.post(
+        "/api/v1/admin/resume/reorder",
+        json={"order": [{"id": a.id, "display_order": 1}]},
+    )
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
