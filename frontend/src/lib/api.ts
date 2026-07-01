@@ -39,7 +39,6 @@ import type { LocalizedStr } from "../types/content";
 
 export type { LocalizedStr };
 
-/** Standard success/error envelope for non-paginated endpoints. */
 export type Envelope<T> =
   | { data: T; error: null }
   | { data: null; error: { code: string; message: string } };

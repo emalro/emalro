@@ -21,10 +21,9 @@
  */
 
 import { renderMarkdown } from "../lib/markdown";
+import type { LocalizedStr } from "../types/content";
 
 const LANG_KEY = "lang";
-
-type LocalizedStr = { es: string; en: string };
 
 function currentLang(): "es" | "en" {
   return (document.documentElement.getAttribute("data-lang") as

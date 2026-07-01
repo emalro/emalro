@@ -2,7 +2,7 @@
 import type { JSX } from "preact";
 import { useId } from "preact/hooks";
 import { resolveLabel, type ContactErrorLabels } from "./i18n";
-import type { LocalizedStr } from "../../lib/api";
+import type { LocalizedStr } from "../../types/content";
 
 /**
  * Accessible form field with inline error message (per

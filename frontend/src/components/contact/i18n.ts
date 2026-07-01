@@ -20,7 +20,7 @@
  * text (the prefix is added by the component, not stored in i18n).
  */
 
-import type { LocalizedStr } from "../../lib/api";
+import type { LocalizedStr } from "../../types/content";
 
 /** Field-level labels: name, email, subject, message, submit. */
 export type ContactFieldLabels = {
