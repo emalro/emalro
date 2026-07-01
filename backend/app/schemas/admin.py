@@ -140,3 +140,40 @@ class AdminProjectUpdateRequest(BaseModel):
     github_url: Optional[str] = Field(default=None, max_length=500)
     demo_url: Optional[str] = Field(default=None, max_length=500)
     is_visible: bool = True
+
+
+# ---------------------------------------------------------------------------
+# Blog CRUD (PR #6)
+# ---------------------------------------------------------------------------
+
+
+class AdminBlogCreateRequest(BaseModel):
+    """Create body for `POST /admin/blog`.
+
+    `id`, `slug`, `created_at`, `updated_at` are server-generated.
+    `content` is the full `LocalizedStr` (markdown source; the
+    public API sanitizes it on read, the admin endpoint keeps the
+    raw source for editing in PR #6b's CodeMirror editor).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: LocalizedStr
+    content: LocalizedStr
+    cover_image_url: Optional[str] = Field(default=None, max_length=500)
+    tags: list[str] = Field(default_factory=list)
+    is_visible: bool = True
+    published_at: Optional[datetime] = None
+
+
+class AdminBlogUpdateRequest(BaseModel):
+    """Update body for `PUT /admin/blog/{id}` (full replace)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: LocalizedStr
+    content: LocalizedStr
+    cover_image_url: Optional[str] = Field(default=None, max_length=500)
+    tags: list[str] = Field(default_factory=list)
+    is_visible: bool = True
+    published_at: Optional[datetime] = None

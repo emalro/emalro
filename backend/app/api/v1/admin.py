@@ -1,10 +1,10 @@
-"""Admin read+list endpoints (PR #2) — projects sub-router split (PR #6).
+"""Admin read+list endpoints (PR #2) — projects + blog sub-routers (PR #6).
 
 `GET /admin/projects` moved to `admin_projects.py` along with the
-new `POST`/`PUT`/`DELETE` endpoints. This module is the aggregator
-for the resource sub-routers.
+new `POST`/`PUT`/`DELETE` endpoints. `GET /admin/blog` moved to
+`admin_blog.py` along with the new `POST`/`PUT`/`DELETE` endpoints.
+This module is the aggregator for the resource sub-routers.
 
-- `GET /admin/blog`            — list ALL blog posts (including drafts).
 - `GET /admin/contacts`        — list non-trashed contact messages.
 - `GET /admin/contacts/trash`  — list trashed contact messages.
 - `GET /admin/resume`          — list ALL resume rows (no is_visible filter).
@@ -12,6 +12,7 @@ for the resource sub-routers.
 Plus the sub-routers mounted via `include_router`:
 
 - `admin_projects.router` — projects CRUD (`/admin/projects`).
+- `admin_blog.router`     — blog CRUD (`/admin/blog`).
 
 The JWT is read from the `emalro_session` httpOnly cookie by
 `get_current_admin`.
@@ -26,13 +27,12 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
-from app.api.v1 import admin_projects
+from app.api.v1 import admin_blog, admin_projects
 from app.core.db import get_session
 from app.core.security import get_current_admin
-from app.models.blog import BlogPost
 from app.models.contact import ContactMessage
 from app.models.resume import ResumeData
-from app.schemas.admin import AdminBlogListItem, AdminResumeEntry
+from app.schemas.admin import AdminResumeEntry
 from app.schemas.contact import ContactListItem
 from app.schemas.envelope import Envelope, PageMeta, PaginatedEnvelope
 from app.schemas.i18n import LocalizedStr
@@ -41,51 +41,6 @@ router = APIRouter(
     prefix="/admin",
     dependencies=[Depends(get_current_admin)],
 )
-
-
-# ---------------------------------------------------------------------------
-# GET /api/v1/admin/blog
-# ---------------------------------------------------------------------------
-
-
-@router.get("/blog", response_model=PaginatedEnvelope[AdminBlogListItem])
-async def admin_list_blog(
-    page: int = Query(default=1, ge=1),
-    limit: int = Query(default=20, ge=1, le=100),
-    session: AsyncSession = Depends(get_session),
-) -> PaginatedEnvelope[AdminBlogListItem]:
-    """List all blog posts, including drafts. Admin view."""
-    total_rows = (await session.execute(select(BlogPost))).scalars().all()
-    total_count = len(total_rows)
-
-    rows = (
-        await session.execute(
-            select(BlogPost)
-            .order_by(col(BlogPost.published_at).desc())
-            .offset((page - 1) * limit)
-            .limit(limit)
-        )
-    ).scalars().all()
-
-    items = [
-        AdminBlogListItem(
-            id=r.id,
-            slug=r.slug,
-            title=LocalizedStr.model_validate(json.loads(r.title)),
-            cover_image_url=r.cover_image_url,
-            tags=_parse_list(r.tags),
-            is_visible=r.is_visible,
-            published_at=r.published_at,
-            created_at=r.created_at,
-        )
-        for r in rows
-    ]
-    return PaginatedEnvelope[AdminBlogListItem](
-        data=items,
-        meta=PageMeta(
-            total=total_count, page=page, limit=limit, pages=_pages(total_count, limit)
-        ),
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -218,6 +173,7 @@ async def admin_list_resume(
 
 
 router.include_router(admin_projects.router)
+router.include_router(admin_blog.router)
 
 
 # ---------------------------------------------------------------------------

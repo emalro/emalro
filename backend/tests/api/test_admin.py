@@ -511,3 +511,211 @@ def test_admin_projects_delete_requires_auth(client, admin_user, db_session):
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "unauthorized"
 
+
+# ---------------------------------------------------------------------------
+# Blog CRUD (PR #6)
+# ---------------------------------------------------------------------------
+
+
+def _blog_create_payload(**overrides) -> dict:
+    base = {
+        "title": {"es": "Mi primer post", "en": "My first post"},
+        "content": {"es": "Contenido en espanol", "en": "Content in English"},
+        "cover_image_url": None,
+        "tags": ["intro", "welcome"],
+        "is_visible": True,
+        "published_at": None,
+    }
+    base.update(overrides)
+    return base
+
+
+def test_admin_blog_create_success(client, admin_user, db_session):
+    """POST /api/v1/admin/blog returns 201 + slug + published_at auto-set."""
+    _login(client)
+    r = client.post("/api/v1/admin/blog", json=_blog_create_payload())
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["error"] is None
+    item = body["data"]
+    assert isinstance(item["id"], str) and item["id"]
+    assert item["slug"] == "mi-primer-post"
+    assert item["is_visible"] is True
+    # published_at auto-set to now (because is_visible=True and published_at=None).
+    assert item["published_at"] is not None
+    assert item["title"]["es"] == "Mi primer post"
+    assert item["tags"] == ["intro", "welcome"]
+
+
+def test_admin_blog_create_draft_does_not_set_published_at(
+    client, admin_user, db_session
+):
+    """Draft (is_visible=False) keeps `published_at` null."""
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/blog",
+        json=_blog_create_payload(is_visible=False, published_at=None),
+    )
+    assert r.status_code == 201
+    item = r.json()["data"]
+    assert item["published_at"] is None
+    assert item["is_visible"] is False
+
+
+def test_admin_blog_create_explicit_published_at_preserved(
+    client, admin_user, db_session
+):
+    """If the client supplies `published_at`, the server keeps it."""
+    from datetime import datetime, timezone
+
+    ts = datetime(2024, 5, 1, tzinfo=timezone.utc)
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/blog",
+        json=_blog_create_payload(published_at=ts.isoformat()),
+    )
+    assert r.status_code == 201
+    item = r.json()["data"]
+    assert item["published_at"] is not None
+    assert item["published_at"].startswith("2024-05-01")
+
+
+def test_admin_blog_create_dedupes_slug(client, admin_user, db_session):
+    """Two creates with the same title get `slug` and `slug-2`."""
+    _login(client)
+    r1 = client.post("/api/v1/admin/blog", json=_blog_create_payload())
+    assert r1.status_code == 201
+    slug1 = r1.json()["data"]["slug"]
+    assert slug1 == "mi-primer-post"
+
+    r2 = client.post("/api/v1/admin/blog", json=_blog_create_payload())
+    assert r2.status_code == 201
+    slug2 = r2.json()["data"]["slug"]
+    assert slug2 == "mi-primer-post-2"
+
+
+def test_admin_blog_create_validation_missing_es(
+    client, admin_user, db_session
+):
+    """LocalizedStr.es is required for both title and content."""
+    _login(client)
+    r = client.post(
+        "/api/v1/admin/blog",
+        json=_blog_create_payload(title={"es": "", "en": "x"}),
+    )
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "validation_error"
+
+
+def test_admin_blog_create_requires_auth(client, admin_user, db_session):
+    """POST without cookie is 401."""
+    r = client.post("/api/v1/admin/blog", json=_blog_create_payload())
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
+
+def test_admin_blog_update_success(client, admin_user, db_session):
+    """PUT replaces the row; slug is preserved; updated_at is bumped."""
+    created = _run(seed_blog_post(db_session, slug="original", is_visible=True))
+    _login(client)
+    r = client.put(
+        f"/api/v1/admin/blog/{created.id}",
+        json=_blog_create_payload(
+            title={"es": "Renombrado", "en": "Renamed"},
+            is_visible=False,
+        ),
+    )
+    assert r.status_code == 200, r.text
+    item = r.json()["data"]
+    assert item["slug"] == "original"
+    assert item["title"]["es"] == "Renombrado"
+    assert item["is_visible"] is False
+
+
+def test_admin_blog_update_publishes_draft(client, admin_user, db_session):
+    """PUT flipping is_visible False->True with no published_at sets it to now."""
+    from sqlmodel import select, col
+    from app.models.blog import BlogPost
+
+    # Seed a draft: pass `published_at=None` so the helper doesn't
+    # auto-set it to now.
+    created = _run(
+        seed_blog_post(
+            db_session,
+            slug="draft",
+            is_visible=False,
+            published_at=None,
+        )
+    )
+    # Sanity check on the seeded row.
+    fetched = (
+        _run(
+            db_session.execute(
+                select(BlogPost).where(col(BlogPost.id) == created.id)
+            )
+        )
+    ).scalars().one()
+    fetched.published_at = None
+    _run(db_session.commit())
+    assert fetched.published_at is None
+
+    _login(client)
+    r = client.put(
+        f"/api/v1/admin/blog/{created.id}",
+        json=_blog_create_payload(is_visible=True, published_at=None),
+    )
+    assert r.status_code == 200
+    item = r.json()["data"]
+    assert item["is_visible"] is True
+    # Server auto-set published_at to now.
+    assert item["published_at"] is not None
+
+
+def test_admin_blog_update_not_found(client, admin_user, db_session):
+    """PUT on a missing id returns 404."""
+    _login(client)
+    r = client.put(
+        "/api/v1/admin/blog/00000000-0000-0000-0000-000000000000",
+        json=_blog_create_payload(),
+    )
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "not_found"
+
+
+def test_admin_blog_update_requires_auth(client, admin_user, db_session):
+    """PUT without cookie is 401."""
+    created = _run(seed_blog_post(db_session))
+    r = client.put(
+        f"/api/v1/admin/blog/{created.id}",
+        json=_blog_create_payload(),
+    )
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
+
+def test_admin_blog_delete_success(client, admin_user, db_session):
+    """DELETE removes the row and 204s; list reflects the change."""
+    created = _run(seed_blog_post(db_session, slug="deleteme"))
+    _login(client)
+    r = client.delete(f"/api/v1/admin/blog/{created.id}")
+    assert r.status_code == 204
+    r2 = client.get("/api/v1/admin/blog")
+    slugs = [p["slug"] for p in r2.json()["data"]]
+    assert "deleteme" not in slugs
+
+
+def test_admin_blog_delete_not_found(client, admin_user, db_session):
+    """DELETE on a missing id returns 404."""
+    _login(client)
+    r = client.delete("/api/v1/admin/blog/00000000-0000-0000-0000-000000000000")
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "not_found"
+
+
+def test_admin_blog_delete_requires_auth(client, admin_user, db_session):
+    """DELETE without cookie is 401."""
+    created = _run(seed_blog_post(db_session))
+    r = client.delete(f"/api/v1/admin/blog/{created.id}")
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "unauthorized"
+
