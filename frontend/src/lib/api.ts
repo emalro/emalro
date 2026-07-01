@@ -82,6 +82,29 @@ export type BlogPostDetail = {
   updated_at: string;
 };
 
+/**
+ * Public contact form payload (per `contact-form` REQ-03).
+ *
+ * `website` is the honeypot field. The backend rejects any submission
+ * with a non-empty `website` (400 `honeypot_triggered`). The frontend
+ * renders it off-screen + `tabindex=-1` + `aria-hidden="true"` so real
+ * users never fill it; bots that fill all fields trigger the silent
+ * rejection.
+ */
+export type ContactPayload = {
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+  website?: string;
+};
+
+/** Response on the 201 path. */
+export type ContactCreateResponse = {
+  id: string;
+  received_at: string;
+};
+
 const API_BASE: string = (() => {
   const raw = (import.meta.env.PUBLIC_API_URL as string | undefined) ?? "";
   // Normalize trailing slashes and the optional `/api/v1` suffix.
@@ -203,4 +226,18 @@ export const api = {
   },
   blogPost: (slug: string) =>
     request<BlogPostDetail>(`/api/v1/blog/${encodeURIComponent(slug)}`),
+  /**
+   * Submit a contact-form message. The endpoint is unauthenticated
+   * (no JWT) and rate-limited per IP at 5/hour (slowapi). The 6th
+   * submission in a window returns 429 `rate_limited` with a
+   * `Retry-After` header. The caller catches `ApiError` and renders
+   * the localized error banner.
+   */
+  contacts: {
+    submit: (payload: ContactPayload) =>
+      request<ContactCreateResponse>("/api/v1/contacts", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+  },
 };
