@@ -1,8 +1,13 @@
-"""Pydantic schemas for the admin read+list surface (PR #2).
+"""Pydantic schemas for the admin read+list surface (PR #2) and
+the admin write surface (PR #6).
 
-PR #2 ships read+list only. Full CRUD (POST/PUT/DELETE) lands in
-PR #6. The shapes here match what the admin list views consume
-in PR #6: same field set, so the FE migration is trivial.
+PR #2 ships read+list only. PR #6 adds full CRUD (POST/PUT/DELETE
+on projects, blog, resume), PATCH on contacts (trash/restore/read
+toggle + permanent delete), image upload + delete, and the
+dashboard counts endpoint. The shapes here match what the admin
+list views consume; the FE migration is trivial because the list
+shape is unchanged and the create/update request bodies are
+direct mirrors of the corresponding response shapes.
 """
 
 from __future__ import annotations
@@ -87,3 +92,261 @@ class AdminResumeEntry(BaseModel):
     extra: dict = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Project CRUD (PR #6)
+# ---------------------------------------------------------------------------
+
+
+class AdminProjectCreateRequest(BaseModel):
+    """Create body for `POST /admin/projects`.
+
+    `id`, `slug`, `created_at`, `updated_at` are server-generated.
+    `slug` is derived from `title.es` (falling back to `title.en`)
+    and deduped with a `-2`, `-3`, ... suffix on conflict.
+    `technologies` is a list of `LocalizedStr` (mirrors the public
+    `ProjectResponse` shape). The server stores the title/description/
+    technologies as JSON-encoded strings on the `Project` row.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: LocalizedStr
+    description: LocalizedStr
+    technologies: list[LocalizedStr] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    image_url: Optional[str] = Field(default=None, max_length=500)
+    github_url: Optional[str] = Field(default=None, max_length=500)
+    demo_url: Optional[str] = Field(default=None, max_length=500)
+    is_visible: bool = True
+
+
+class AdminProjectUpdateRequest(BaseModel):
+    """Update body for `PUT /admin/projects/{id}`.
+
+    The full set of editable fields is required (PUT = full replace).
+    `slug` is not editable in PR #6 (the slug is the public identifier;
+    re-slugging is out of scope for the v1 admin).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: LocalizedStr
+    description: LocalizedStr
+    technologies: list[LocalizedStr] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    image_url: Optional[str] = Field(default=None, max_length=500)
+    github_url: Optional[str] = Field(default=None, max_length=500)
+    demo_url: Optional[str] = Field(default=None, max_length=500)
+    is_visible: bool = True
+
+
+# ---------------------------------------------------------------------------
+# Blog CRUD (PR #6)
+# ---------------------------------------------------------------------------
+
+
+class AdminBlogCreateRequest(BaseModel):
+    """Create body for `POST /admin/blog`.
+
+    `id`, `slug`, `created_at`, `updated_at` are server-generated.
+    `content` is the full `LocalizedStr` (markdown source; the
+    public API sanitizes it on read, the admin endpoint keeps the
+    raw source for editing in PR #6b's CodeMirror editor).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: LocalizedStr
+    content: LocalizedStr
+    cover_image_url: Optional[str] = Field(default=None, max_length=500)
+    tags: list[str] = Field(default_factory=list)
+    is_visible: bool = True
+    published_at: Optional[datetime] = None
+
+
+class AdminBlogUpdateRequest(BaseModel):
+    """Update body for `PUT /admin/blog/{id}` (full replace)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: LocalizedStr
+    content: LocalizedStr
+    cover_image_url: Optional[str] = Field(default=None, max_length=500)
+    tags: list[str] = Field(default_factory=list)
+    is_visible: bool = True
+    published_at: Optional[datetime] = None
+
+
+# ---------------------------------------------------------------------------
+# Resume CRUD (PR #6)
+#
+# `ResumeData` is the most complex model in the schema (free-form
+# `extra` JSON, section-based grouping, `display_order` for sort).
+# The create/update request accepts the full editable set. The
+# reorder endpoint takes a list of {id, display_order} pairs and
+# updates them in a single transaction.
+# ---------------------------------------------------------------------------
+
+
+class AdminResumeCreateRequest(BaseModel):
+    """Create body for `POST /admin/resume`.
+
+    `display_order` is optional; when omitted, the server picks
+    `max(display_order) + 1` in the same section (so a new
+    experience row lands at the end of the section's list).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    section: str = Field(..., min_length=1, max_length=32)
+    display_order: Optional[int] = None
+    title: LocalizedStr
+    subtitle: Optional[str] = Field(default=None, max_length=200)
+    description: Optional[LocalizedStr] = None
+    start_date: Optional[str] = Field(default=None, max_length=7)
+    end_date: Optional[str] = Field(default=None, max_length=7)
+    url: Optional[str] = Field(default=None, max_length=500)
+    image_url: Optional[str] = Field(default=None, max_length=500)
+    tags: list[str] = Field(default_factory=list)
+    is_visible: bool = True
+    extra: dict = Field(default_factory=dict)
+
+
+class AdminResumeUpdateRequest(BaseModel):
+    """Update body for `PUT /admin/resume/{id}` (full replace).
+
+    `section` is editable in v1 (the operator may move a row from
+    `experience` to `course`, for example). `display_order` is
+    editable too — for bulk reordering the FE should call the
+    dedicated `POST /admin/resume/reorder` endpoint instead.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    section: str = Field(..., min_length=1, max_length=32)
+    display_order: int = 0
+    title: LocalizedStr
+    subtitle: Optional[str] = Field(default=None, max_length=200)
+    description: Optional[LocalizedStr] = None
+    start_date: Optional[str] = Field(default=None, max_length=7)
+    end_date: Optional[str] = Field(default=None, max_length=7)
+    url: Optional[str] = Field(default=None, max_length=500)
+    image_url: Optional[str] = Field(default=None, max_length=500)
+    tags: list[str] = Field(default_factory=list)
+    is_visible: bool = True
+    extra: dict = Field(default_factory=dict)
+
+
+class AdminResumeReorderItem(BaseModel):
+    """A single (id, display_order) pair in the reorder payload."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    display_order: int = Field(..., ge=0)
+
+
+class AdminResumeReorderRequest(BaseModel):
+    """Body for `POST /admin/resume/reorder`.
+
+    The list is processed in a single transaction; on any error
+    the entire reorder is rolled back.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    order: list[AdminResumeReorderItem] = Field(..., min_length=1)
+
+
+# ---------------------------------------------------------------------------
+# Image upload (PR #6)
+#
+# `POST /admin/images` (multipart form, `file` field) returns the
+# storage path and the public URL. `DELETE /admin/images` takes a
+# JSON body with the `path` to remove.
+# ---------------------------------------------------------------------------
+
+
+class AdminImageUploadResponse(BaseModel):
+    """Response for `POST /admin/images`."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    url: str
+    path: str
+
+
+class AdminImageDeleteRequest(BaseModel):
+    """Body for `DELETE /admin/images` (JSON)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    path: str = Field(..., min_length=1, max_length=500)
+
+
+# ---------------------------------------------------------------------------
+# Dashboard counts (PR #6)
+#
+# Single endpoint that returns the four card counts the admin
+# dashboard renders. Replaces the four `useQuery` calls in the
+# PR #5b Dashboard.tsx (the migration lands in PR #6b, but the
+# endpoint ships here so the surface is testable).
+# ---------------------------------------------------------------------------
+
+
+class ProjectsCounts(BaseModel):
+    """Project dashboard counts."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    published: int = 0
+    drafts: int = 0
+
+
+class BlogCounts(BaseModel):
+    """Blog dashboard counts."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    published: int = 0
+    drafts: int = 0
+
+
+class ContactsCounts(BaseModel):
+    """Contact inbox dashboard counts.
+
+    `total` is the inbox count (deleted_at IS NULL).
+    `unread` is the unread count (deleted_at IS NULL AND read_at IS NULL).
+    `trashed` is the trash count (deleted_at IS NOT NULL).
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    total: int = 0
+    unread: int = 0
+    trashed: int = 0
+
+
+class ResumeCounts(BaseModel):
+    """Resume dashboard counts."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    total: int = 0
+
+
+class AdminDashboardCounts(BaseModel):
+    """Aggregate dashboard counts.
+
+    Returned by `GET /api/v1/admin/dashboard/counts` as the `data`
+    field of the standard envelope.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    projects: ProjectsCounts = Field(default_factory=ProjectsCounts)
+    blog: BlogCounts = Field(default_factory=BlogCounts)
+    contacts: ContactsCounts = Field(default_factory=ContactsCounts)
+    resume: ResumeCounts = Field(default_factory=ResumeCounts)

@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     LOGIN_RATE_LIMIT: str = "5/minute"
     CONTACT_RATE_LIMIT: str = "5/hour"
     IMAGE_MAX_BYTES: int = 5_242_880  # 5 MB
+    # Local upload directory (used by the dev / test storage backend).
+    # In production, images go to Supabase Storage and this value is
+    # ignored. The directory is created on demand by the storage layer.
+    UPLOAD_DIR: str = "./uploads"
 
     @field_validator("JWT_SECRET")
     @classmethod

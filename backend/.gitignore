@@ -19,3 +19,7 @@ build/
 .env
 .env.*
 !.env.example
+
+# Local upload dir for the dev image storage backend.
+# In production images go to Supabase Storage and this dir is unused.
+uploads/
