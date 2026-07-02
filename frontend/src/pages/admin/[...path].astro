@@ -1,0 +1,58 @@
+---
+/**
+ * Admin SPA catch-all route.
+ *
+ * Astro renders a static shell that hosts the Preact admin app.
+ * The catch-all path matches `/admin`, `/admin/dashboard`,
+ * `/admin/projects`, etc. — every admin URL is handled by this
+ * single page. Client-side routing (login redirect, dashboard
+ * nav) lives inside `<AdminApp />` (wouter).
+ *
+ * Why `client:only="preact"`:
+ * - The admin SPA is purely client-side (data fetched at runtime
+ *   after the user logs in). There is nothing for Astro to
+ *   render at build time.
+ * - `client:only` skips SSR entirely, so the admin bundle is
+ *   never linked from the public-site pages. `/admin` ships its
+ *   own JS chunk, served only when a visitor actually navigates
+ *   to `/admin/*`.
+ *
+ * Why `getStaticPaths` enumerates the known routes:
+ * - Astro 4 with `output: "static"` requires `getStaticPaths` for
+ *   any dynamic route. We enumerate the admin paths the SPA
+ *   knows about so each one gets a static `index.html` that
+ *   loads the same admin bundle.
+ * - For the Vercel deploy, a `vercel.json` rewrite (added in a
+ *   follow-up deployment-config PR) will redirect any unknown
+ *   `/admin/*` path to `/admin/index.html` so the SPA can take
+ *   over client-side. Local dev handles this transparently via
+ *   Astro's dev server.
+ *
+ * Layout note: the public Layout.astro still wraps this page so
+ * the <html>/<head>/theme bootstrap apply. The Navbar is
+ * visible in the admin context too (it carries the public
+ * theme toggle that admin pages inherit via the CSS variables).
+ */
+import Layout from "../../layouts/Layout.astro";
+import AdminApp from "../../components/admin/App";
+
+export function getStaticPaths() {
+  // Each entry produces a static HTML at `/admin/<path>/index.html`.
+  // The Preact SPA inside handles all client-side navigation.
+  return [
+    { params: { path: undefined } },
+    { params: { path: "dashboard" } },
+    { params: { path: "projects" } },
+    { params: { path: "blog" } },
+    { params: { path: "contacts" } },
+    { params: { path: "resume" } },
+  ];
+}
+
+const { path } = Astro.params;
+const titleSuffix = path ? ` / ${path}` : "";
+---
+
+<Layout title={`Admin — emalro${titleSuffix}`} description="Panel de administración">
+  <AdminApp client:only="preact" />
+</Layout>
