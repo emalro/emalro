@@ -112,6 +112,64 @@ def test_logout_clears_cookie(client, admin_user):
 
 
 # ---------------------------------------------------------------------------
+# /auth/me
+# ---------------------------------------------------------------------------
+
+
+def test_me_without_cookie_returns_401(client):
+    """No `emalro_session` cookie → 401 unauthorized."""
+    r = client.get("/api/v1/auth/me")
+    assert r.status_code == 401
+    body = r.json()
+    assert body["data"] is None
+    assert body["error"]["code"] == "unauthorized"
+
+
+def test_me_with_invalid_cookie_returns_401(client):
+    """A garbage cookie value → 401 unauthorized (not token_expired)."""
+    client.cookies.set("emalro_session", "not-a-real-jwt")
+    r = client.get("/api/v1/auth/me")
+    assert r.status_code == 401
+    body = r.json()
+    assert body["data"] is None
+    assert body["error"]["code"] == "unauthorized"
+
+
+def test_me_with_valid_cookie_returns_admin_info(client, admin_user):
+    """After login, GET /me returns the admin's id/email/is_active."""
+    r_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@emalro.com.ar", "password": "S3cr3t!Pass"},
+    )
+    assert r_login.status_code == 200
+
+    r = client.get("/api/v1/auth/me")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["error"] is None
+    data = body["data"]
+    assert data["id"] == admin_user.id
+    assert data["email"] == admin_user.email
+    assert data["is_active"] is True
+
+
+def test_me_with_expired_token_returns_token_expired(client, admin_user):
+    """An expired JWT → 401 token_expired (not unauthorized)."""
+    from datetime import timedelta
+
+    from app.core.security import create_access_token
+
+    expired = create_access_token(
+        {"sub": admin_user.id, "email": admin_user.email},
+        expires_delta=timedelta(seconds=-10),
+    )
+    client.cookies.set("emalro_session", expired)
+    r = client.get("/api/v1/auth/me")
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "token_expired"
+
+
+# ---------------------------------------------------------------------------
 # JWT shape
 # ---------------------------------------------------------------------------
 
